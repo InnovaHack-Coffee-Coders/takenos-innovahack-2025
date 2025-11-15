@@ -12,7 +12,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Takenos Innovahack 2025",
-  description: "Aplicación para gestión de productores e inspectores",
+  description: "Aplicación para gestión de influencers",
 };
 
 export default function RootLayout({

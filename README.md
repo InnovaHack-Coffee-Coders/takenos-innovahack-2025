@@ -16,9 +16,6 @@ src/
 ├── features/                # Features organizadas por dominio
 │   ├── auth/
 │   ├── dashboard/
-│   ├── inspectors/
-│   ├── plots/
-│   └── producers/
 ├── hooks/                   # Custom hooks
 ├── infrastructure/          # Configuración de infraestructura
 │   └── api/

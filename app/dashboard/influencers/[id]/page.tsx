@@ -20,6 +20,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import type { InfluencerWithRelations } from '@/shared/types/influencer.types'
 
 interface ScrapedVideo {
@@ -76,104 +83,226 @@ interface ScrapedResponse {
   timestamp: string
 }
 
-const DUMMY_INFLUENCER: InfluencerWithRelations = {
-  id: 1,
-  name: 'Influencer demo',
-  email: 'demo@takenos.com',
+const createDummyInfluencer = (id: number): InfluencerWithRelations => ({
+  id,
+  name: `Influencer demo ${id}`,
+  email: `demo${id}@takenos.com`,
   birthDate: null,
   niche: 'Creador de contenido',
-  referralCode: 'DEMO2025',
+  referralCode: `DEMO${2000 + id}`,
   createdAt: new Date(),
   updatedAt: new Date(),
   socialAccounts: [],
   influencerCampaigns: [],
   posts: [],
   _count: {
-    posts: 3,
-    influencerCampaigns: 2,
+    posts: 0,
+    influencerCampaigns: 0,
   },
+})
+
+type DummyJson = {
+  data?: {
+    profile?: {
+      username?: string
+      avatar_url?: string
+      followers?: number
+      following?: number
+      likes?: number
+    }
+    videos?: Array<Record<string, unknown>>
+  }
 }
 
-const DUMMY_SCRAPED: ScrapedResponse = {
-  success: true,
-  message: 'Datos de ejemplo (dummy) para la vista de detalle.',
-  timestamp: new Date().toISOString(),
-  data: {
-    profile: {
-      username: 'demo.influencer',
-      avatar_url: '/profile.png',
-      followers: 1250,
-      following: 340,
-      likes: 9800,
-      engagement_median: 0.054,
-      engagement_range: { low: 0.04, high: 0.07 },
+const buildScrapedFromDummyJson = (id: number, raw: DummyJson): ScrapedResponse => {
+  const profile = raw?.data?.profile ?? {}
+  const allVideos: Record<string, unknown>[] = raw?.data?.videos ?? []
+
+  if (!allVideos.length) {
+    return {
+      success: true,
+      message: 'Sin videos en datos dummy.',
+      timestamp: new Date().toISOString(),
+      data: {
+        profile: {
+          username: profile.username ?? `demo_${id}`,
+          avatar_url: profile.avatar_url ?? '/profile.png',
+          followers: profile.followers ?? 0,
+          following: profile.following ?? 0,
+          likes: profile.likes ?? 0,
+          engagement_median: 0,
+          engagement_range: { low: 0, high: 0 },
+        },
+        statistics: {
+          total_videos: 0,
+          median_engagement: 0,
+          average_engagement: 0,
+          totals: { views: '0', likes: '0', comments: '0' },
+        },
+        top_videos: {
+          most_saved: {
+            id: '',
+            desc: '',
+            views: 0,
+            likes: 0,
+            comments: 0,
+            saves: 0,
+            duration: 0,
+            engagement_rate: 0,
+            engagement_level: 'bajo',
+            percentile: '0.00',
+            score_100: 0,
+            is_most_viewed: 0,
+            is_most_saved: 0,
+            is_highest_engagement: 0,
+            is_top_percentile: 0,
+          },
+          most_viewed: {
+            id: '',
+            desc: '',
+            views: 0,
+            likes: 0,
+            comments: 0,
+            saves: 0,
+            duration: 0,
+            engagement_rate: 0,
+            engagement_level: 'bajo',
+            percentile: '0.00',
+            score_100: 0,
+            is_most_viewed: 0,
+            is_most_saved: 0,
+            is_highest_engagement: 0,
+            is_top_percentile: 0,
+          },
+          highest_engagement: {
+            id: '',
+            desc: '',
+            views: 0,
+            likes: 0,
+            comments: 0,
+            saves: 0,
+            duration: 0,
+            engagement_rate: 0,
+            engagement_level: 'bajo',
+            percentile: '0.00',
+            score_100: 0,
+            is_most_viewed: 0,
+            is_most_saved: 0,
+            is_highest_engagement: 0,
+            is_top_percentile: 0,
+          },
+        },
+        videos: [],
+        scraped_at: new Date().toISOString(),
+      },
+    }
+  }
+
+  // Para dummy: usar siempre los primeros N videos para todos los influencers
+  const videosForInfluencer = allVideos.slice(0, 20)
+
+  const mappedVideos: ScrapedVideo[] = videosForInfluencer.map((v) => {
+    const views = Number(v.views ?? 0)
+    const likes = Number(v.likes ?? 0)
+    const comments = Number(v.comments ?? 0)
+    const saves = Number(v.saves ?? 0)
+    const engagementRate = Number(v.engagement_rate ?? 0)
+    const engagementLevel = (v.engagement_level as string | undefined) ?? 'estándar'
+    const percentile =
+      typeof v.percentile === 'number' || typeof v.percentile === 'string'
+        ? String(v.percentile)
+        : '0.00'
+    const score100 = Number(v.score_100 ?? 0)
+
+    return {
+      id: String(v.id),
+      desc: (v.desc as string | undefined) ?? '',
+      views,
+      likes,
+      comments,
+      saves,
+      duration: Number(v.duration ?? 0),
+      engagement_rate: engagementRate,
+      engagement_level: engagementLevel,
+      percentile,
+      score_100: score100,
+      is_most_viewed: 0,
+      is_most_saved: 0,
+      is_highest_engagement: 0,
+      is_top_percentile: Number(percentile) >= 90 ? 1 : 0,
+    }
+  })
+  const engagements = mappedVideos.map((v) => v.engagement_rate).sort((a, b) => a - b)
+  const totalVideos = mappedVideos.length
+
+  const median =
+    engagements.length === 0
+      ? 0
+      : engagements.length % 2 !== 0
+      ? engagements[Math.floor(engagements.length / 2)]
+      : (engagements[engagements.length / 2 - 1] + engagements[engagements.length / 2]) / 2
+
+  const average =
+    engagements.length === 0
+      ? 0
+      : engagements.reduce((a, b) => a + b, 0) / engagements.length
+
+  const totalsViews = mappedVideos.reduce((sum, v) => sum + (v.views ?? 0), 0)
+  const totalsLikes = mappedVideos.reduce((sum, v) => sum + (v.likes ?? 0), 0)
+  const totalsComments = mappedVideos.reduce((sum, v) => sum + (v.comments ?? 0), 0)
+
+  const mostViewed =
+    mappedVideos.reduce((best, v) => (v.views > best.views ? v : best), mappedVideos[0]) ??
+    mappedVideos[0]
+  const mostSaved =
+    mappedVideos.reduce((best, v) => (v.saves > best.saves ? v : best), mappedVideos[0]) ??
+    mappedVideos[0]
+  const highestEngagement =
+    mappedVideos.reduce(
+      (best, v) => (v.engagement_rate > best.engagement_rate ? v : best),
+      mappedVideos[0],
+    ) ?? mappedVideos[0]
+
+  // Marcar flags en los videos
+  mappedVideos.forEach((v) => {
+    v.is_most_viewed = v.id === mostViewed.id ? 1 : 0
+    v.is_most_saved = v.id === mostSaved.id ? 1 : 0
+    v.is_highest_engagement = v.id === highestEngagement.id ? 1 : 0
+  })
+
+  return {
+    success: true,
+    message: 'Datos dummy generados desde json-influencers.json',
+    timestamp: new Date().toISOString(),
+    data: {
+      profile: {
+        username: profile.username ?? `demo_${id}`,
+        avatar_url: profile.avatar_url ?? '/profile.png',
+        followers: profile.followers ?? 0,
+        following: profile.following ?? 0,
+        likes: profile.likes ?? 0,
+        engagement_median: median,
+        engagement_range: { low: median * 0.8, high: median * 1.2 },
+      },
+      statistics: {
+        total_videos: totalVideos,
+        median_engagement: median,
+        average_engagement: average,
+        totals: {
+          views: String(totalsViews),
+          likes: String(totalsLikes),
+          comments: String(totalsComments),
+        },
+      },
+      top_videos: {
+        most_saved: mostSaved,
+        most_viewed: mostViewed,
+        highest_engagement: highestEngagement,
+      },
+      videos: mappedVideos,
+      scraped_at: new Date().toISOString(),
     },
-    statistics: {
-      total_videos: 10,
-      median_engagement: 0.054,
-      average_engagement: 0.058,
-      totals: {
-        views: '85000',
-        likes: '5200',
-        comments: '340',
-      },
-    },
-    top_videos: {
-      most_saved: {
-        id: 'vid-dummy-3',
-        desc: 'Tutorial rápido que los usuarios guardan para ver después.',
-        views: 12000,
-        likes: 850,
-        comments: 40,
-        saves: 320,
-        duration: 35,
-        engagement_rate: 0.097,
-        engagement_level: 'top',
-        percentile: '92.00',
-        score_100: 88,
-        is_most_viewed: 0,
-        is_most_saved: 1,
-        is_highest_engagement: 0,
-        is_top_percentile: 1,
-      },
-      most_viewed: {
-        id: 'vid-dummy-1',
-        desc: 'Video principal de campaña con mayor alcance.',
-        views: 25000,
-        likes: 1100,
-        comments: 60,
-        saves: 180,
-        duration: 28,
-        engagement_rate: 0.044,
-        engagement_level: 'estándar',
-        percentile: '55.00',
-        score_100: 70,
-        is_most_viewed: 1,
-        is_most_saved: 0,
-        is_highest_engagement: 0,
-        is_top_percentile: 0,
-      },
-      highest_engagement: {
-        id: 'vid-dummy-2',
-        desc: 'Contenido con mejor engagement relativo.',
-        views: 8000,
-        likes: 900,
-        comments: 50,
-        saves: 140,
-        duration: 22,
-        engagement_rate: 0.136,
-        engagement_level: 'top',
-        percentile: '96.00',
-        score_100: 100,
-        is_most_viewed: 0,
-        is_most_saved: 0,
-        is_highest_engagement: 1,
-        is_top_percentile: 1,
-      },
-    },
-    videos: [],
-    scraped_at: new Date().toISOString(),
-  },
+  }
 }
 
 export default function InfluencerDetailPage() {
@@ -185,6 +314,8 @@ export default function InfluencerDetailPage() {
 
   const [scraped, setScraped] = useState<ScrapedResponse | null>(null)
   const [scrapeLoading, setScrapeLoading] = useState(false)
+  const [commentsVideo, setCommentsVideo] = useState<ScrapedVideo | null>(null)
+  const [commentsOpen, setCommentsOpen] = useState(false)
 
   useEffect(() => {
     if (!id || Number.isNaN(id)) return
@@ -192,18 +323,21 @@ export default function InfluencerDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  const fetchInfluencer = async () => {
+  const fetchInfluencer = async (): Promise<void> => {
     try {
       const res = await fetch(`/api/influencers/${id}`)
       if (!res.ok) {
         // Modo dummy si la API devuelve error o 404
-        setInfluencer(DUMMY_INFLUENCER)
-        setScraped(DUMMY_SCRAPED)
+        const dummyRes = await fetch('/json-influencers.json')
+        const dummyJson = (await dummyRes.json()) as DummyJson
+        setInfluencer(createDummyInfluencer(id))
+        setScraped(buildScrapedFromDummyJson(id, dummyJson))
         return
       }
 
-      const data = await res.json()
-      const item = (data.data || null) as InfluencerWithRelations | null
+      type InfluencerResponse = { data?: InfluencerWithRelations | null }
+      const data: InfluencerResponse = await res.json()
+      const item = data.data ?? null
       setInfluencer(item)
 
       if (item) {
@@ -212,8 +346,15 @@ export default function InfluencerDetailPage() {
     } catch (error) {
       console.error('Error fetching influencer detail:', error)
       // Modo dummy en caso de error
-      setInfluencer(DUMMY_INFLUENCER)
-      setScraped(DUMMY_SCRAPED)
+      try {
+        const dummyRes = await fetch('/json-influencers.json')
+        const dummyJson = (await dummyRes.json()) as DummyJson
+        setInfluencer(createDummyInfluencer(id))
+        setScraped(buildScrapedFromDummyJson(id, dummyJson))
+      } catch {
+        setInfluencer(createDummyInfluencer(id))
+        setScraped(null)
+      }
     } finally {
       setLoading(false)
     }
@@ -639,11 +780,8 @@ export default function InfluencerDetailPage() {
                                     size="sm"
                                     className="h-7 text-[11px] rounded-2xl"
                                     onClick={() => {
-                                      // Placeholder: aquí en un futuro se podrán cargar comentarios reales
-                                      console.log(
-                                        '[Comentarios dummy] Ver comentarios para video',
-                                        video.id
-                                      )
+                                      setCommentsVideo(video)
+                                      setCommentsOpen(true)
                                     }}
                                   >
                                     Ver comentarios
@@ -668,6 +806,75 @@ export default function InfluencerDetailPage() {
           </div>
         </div>
       </SidebarInset>
+      {/* Modal dummy para comentarios del video */}
+      <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
+        <DialogContent className="max-w-2xl rounded-[20px]">
+          <DialogHeader>
+            <DialogTitle className="text-[18px] font-bold text-[#1A1A2E]">
+              Comentarios del video
+            </DialogTitle>
+            <DialogDescription className="text-[14px] text-[#6B6B8D]">
+              Vista dummy con comentarios simulados para análisis de marketing.
+            </DialogDescription>
+          </DialogHeader>
+          {commentsVideo && (
+            <div className="space-y-4 text-sm">
+              <div className="rounded-xl bg-[rgba(108,72,197,0.03)] p-3">
+                <p className="text-xs text-[#6B6B8D] mb-1">Descripción</p>
+                <p className="text-sm text-[#1A1A2E]">
+                  {commentsVideo.desc || 'Sin descripción'}
+                </p>
+                <p className="text-[11px] text-[#9CA3AF] mt-1">
+                  ID:{' '}
+                  <span className="font-mono">
+                    {commentsVideo.id}
+                  </span>
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[11px] text-[#6B6B8D] mb-1">Vistas</p>
+                  <p className="text-sm font-semibold text-[#1A1A2E]">
+                    {formatNumber(commentsVideo.views)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-[#6B6B8D] mb-1">Comentarios</p>
+                  <p className="text-sm font-semibold text-[#1A1A2E]">
+                    {commentsVideo.comments.toLocaleString('es-ES')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-[#6B6B8D] mb-1">Engagement</p>
+                  <p className="text-sm font-semibold text-[#1A1A2E]">
+                    {formatPercent(commentsVideo.engagement_rate)}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-[#6B6B8D]">
+                  Comentarios simulados (dummy):
+                </p>
+                <ul className="space-y-1">
+                  <li className="text-sm text-[#1A1A2E] bg-[#F9FAFB] rounded-lg px-3 py-2">
+                    “¿Dónde puedo saber más sobre este tema?” — Usuario A
+                  </li>
+                  <li className="text-sm text-[#1A1A2E] bg-[#F9FAFB] rounded-lg px-3 py-2">
+                    “Me encantó este contenido, ¿habrá segunda parte?” — Usuario B
+                  </li>
+                  <li className="text-sm text-[#1A1A2E] bg-[#F9FAFB] rounded-lg px-3 py-2">
+                    “Tengo esta duda específica, ¿me puedes ayudar?” — Usuario C
+                  </li>
+                </ul>
+              </div>
+              <p className="text-[11px] text-[#9CA3AF]">
+                Más adelante aquí podrás conectar tu análisis con IA (Gemini) para resumir
+                preguntas frecuentes y oportunidades de contenido.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 }

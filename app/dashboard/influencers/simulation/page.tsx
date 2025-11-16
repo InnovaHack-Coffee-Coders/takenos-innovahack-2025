@@ -84,6 +84,151 @@ interface ScrapedResponse {
   timestamp: string
 }
 
+const DEMO_SCRAPED_RESPONSE: ScrapedResponse = {
+  success: true,
+  message: 'Datos de ejemplo (demo, sin scraping real)',
+  timestamp: new Date().toISOString(),
+  data: {
+    profile: {
+      username: 'demo.influencer',
+      followers: 152340,
+      following: 320,
+      likes: 982340,
+      engagement_median: 0.045,
+      engagement_range: { low: 0.03, high: 0.06 },
+    },
+    statistics: {
+      total_videos: 3,
+      median_engagement: 0.045,
+      average_engagement: 0.048,
+      totals: {
+        views: '325000',
+        likes: '18400',
+        comments: '860',
+      },
+    },
+    top_videos: {
+      most_saved: {
+        id: 'vid-3',
+        desc: 'Tutorial de skincare nocturno',
+        create_time: 1711929600,
+        views: 95000,
+        likes: 6200,
+        comments: 310,
+        saves: 1200,
+        duration: 32,
+        hashtags: ['#skincare', '#nightroutine'],
+        engagement_rate: 0.068,
+        engagement_level: 'top',
+        percentile: '95.00',
+        score_100: 100,
+        is_most_viewed: 0,
+        is_most_saved: 1,
+        is_highest_engagement: 0,
+        is_top_percentile: 1,
+      },
+      most_viewed: {
+        id: 'vid-2',
+        desc: 'Vida diaria como creadora de contenido',
+        create_time: 1711411200,
+        views: 150000,
+        likes: 7800,
+        comments: 290,
+        saves: 600,
+        duration: 45,
+        hashtags: ['#dayinmylife', '#influencer'],
+        engagement_rate: 0.053,
+        engagement_level: 'alto',
+        percentile: '88.00',
+        score_100: 78,
+        is_most_viewed: 1,
+        is_most_saved: 0,
+        is_highest_engagement: 0,
+        is_top_percentile: 0,
+      },
+      highest_engagement: {
+        id: 'vid-1',
+        desc: 'Tips rápidos para crecer en TikTok en 2025',
+        create_time: 1710999000,
+        views: 80000,
+        likes: 6400,
+        comments: 260,
+        saves: 900,
+        duration: 28,
+        hashtags: ['#tiktokgrowth', '#creadordecontenido'],
+        engagement_rate: 0.071,
+        engagement_level: 'top',
+        percentile: '97.00',
+        score_100: 100,
+        is_most_viewed: 0,
+        is_most_saved: 0,
+        is_highest_engagement: 1,
+        is_top_percentile: 1,
+      },
+    },
+    videos: [
+      {
+        id: 'vid-1',
+        desc: 'Tips rápidos para crecer en TikTok en 2025',
+        create_time: 1710999000,
+        views: 80000,
+        likes: 6400,
+        comments: 260,
+        saves: 900,
+        duration: 28,
+        hashtags: ['#tiktokgrowth', '#creadordecontenido'],
+        engagement_rate: 0.071,
+        engagement_level: 'top',
+        percentile: '97.00',
+        score_100: 100,
+        is_most_viewed: 0,
+        is_most_saved: 0,
+        is_highest_engagement: 1,
+        is_top_percentile: 1,
+      },
+      {
+        id: 'vid-2',
+        desc: 'Vida diaria como creadora de contenido',
+        create_time: 1711411200,
+        views: 150000,
+        likes: 7800,
+        comments: 290,
+        saves: 600,
+        duration: 45,
+        hashtags: ['#dayinmylife', '#influencer'],
+        engagement_rate: 0.053,
+        engagement_level: 'alto',
+        percentile: '88.00',
+        score_100: 78,
+        is_most_viewed: 1,
+        is_most_saved: 0,
+        is_highest_engagement: 0,
+        is_top_percentile: 0,
+      },
+      {
+        id: 'vid-3',
+        desc: 'Tutorial de skincare nocturno',
+        create_time: 1711929600,
+        views: 95000,
+        likes: 6200,
+        comments: 310,
+        saves: 1200,
+        duration: 32,
+        hashtags: ['#skincare', '#nightroutine'],
+        engagement_rate: 0.068,
+        engagement_level: 'top',
+        percentile: '95.00',
+        score_100: 92,
+        is_most_viewed: 0,
+        is_most_saved: 1,
+        is_highest_engagement: 0,
+        is_top_percentile: 1,
+      },
+    ],
+    scraped_at: new Date().toISOString(),
+  },
+}
+
 export default function InfluencerSimulationPage() {
   const [platform, setPlatform] = useState<'tiktok' | 'instagram'>('tiktok')
   const [value, setValue] = useState('')
@@ -91,6 +236,26 @@ export default function InfluencerSimulationPage() {
   const [result, setResult] = useState<ScrapedResponse | null>(null)
   const [backendHealth, setBackendHealth] = useState<Record<string, unknown> | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const openTikTokProfile = () => {
+    const inputUsername = value.trim()
+    const username =
+      inputUsername.replace(/^@/, '') ||
+      (result?.data.profile.username ?? '').toString().trim()
+
+    if (!username) {
+      console.log('[TikTok puzzle] No hay username para abrir perfil.')
+      setError('Ingresa un nombre de usuario para abrir el perfil en TikTok.')
+      return
+    }
+
+    const url = `https://www.tiktok.com/@${username}`
+    console.log('[TikTok puzzle] Navegando al perfil en esta pestaña:', url)
+
+    if (typeof window !== 'undefined') {
+      window.location.href = url
+    }
+  }
 
   const handleSimulate = async () => {
     const trimmed = value.trim()
@@ -119,9 +284,29 @@ export default function InfluencerSimulationPage() {
         return
       }
 
-      // La API /api/scraping/tiktok devuelve el objeto ScrapedResponse en la
-      // raíz del JSON, junto con backendHealth.
-      setResult(data as ScrapedResponse)
+      const real = data as ScrapedResponse
+
+      // Mezcla: perfil real desde backend + videos y estadísticas dummy.
+      const mixed: ScrapedResponse = {
+        success: true,
+        message:
+          real.message ||
+          'Perfil obtenido desde backend. Videos y estadísticas simulados (dummy).',
+        timestamp: new Date().toISOString(),
+        data: {
+          ...DEMO_SCRAPED_RESPONSE.data,
+          profile: {
+            ...real.data.profile,
+          },
+        },
+      }
+
+      console.log('[Simulación mixta] Perfil real + videos dummy:', {
+        backendProfile: real.data.profile,
+        demoVideosCount: DEMO_SCRAPED_RESPONSE.data.videos.length,
+      })
+
+      setResult(mixed)
       setBackendHealth((data.backendHealth as Record<string, unknown>) ?? null)
     } catch (err) {
       console.error('Error simulando importación:', err)
@@ -160,6 +345,26 @@ export default function InfluencerSimulationPage() {
       year: 'numeric',
       month: 'short',
       day: '2-digit',
+    })
+  }
+
+  const useDemoData = () => {
+    console.log('[Simulación demo] Usando datos de ejemplo (sin backend).')
+    setError(null)
+    setBackendHealth(null)
+    setResult({
+      ...DEMO_SCRAPED_RESPONSE,
+      timestamp: new Date().toISOString(),
+      data: {
+        ...DEMO_SCRAPED_RESPONSE.data,
+        profile: {
+          ...DEMO_SCRAPED_RESPONSE.data.profile,
+          username:
+            value.trim().replace(/^@/, '') ||
+            DEMO_SCRAPED_RESPONSE.data.profile.username,
+        },
+        scraped_at: new Date().toISOString(),
+      },
     })
   }
 
@@ -243,13 +448,31 @@ export default function InfluencerSimulationPage() {
                       {error}
                     </p>
                   )}
-                  <div className="flex justify-end">
+                  <div className="flex flex-col gap-2 md:flex-row md:justify-end">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openTikTokProfile}
+                        className="rounded-2xl"
+                      >
+                        Abrir perfil en TikTok
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={useDemoData}
+                        className="rounded-2xl"
+                      >
+                        Usar datos demo
+                      </Button>
+                    </div>
                     <Button
                       onClick={handleSimulate}
                       disabled={loading}
                       className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-6"
                     >
-                      {loading ? 'Obteniendo datos...' : 'Ver datos simulados'}
+                      {loading ? 'Obteniendo datos reales...' : 'Ver datos reales (backend)'}
                     </Button>
                   </div>
                 </CardContent>

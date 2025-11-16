@@ -35,7 +35,7 @@ export function LoginForm({
               <div className="flex flex-col items-center gap-2 text-center mb-4">
                 <h1 className="text-[28px] font-bold text-[#1A1A2E]">Bienvenido</h1>
                 <p className="text-[#6B6B8D] text-balance text-[16px]">
-                  Inicia sesión en tu cuenta de CRM Taken 
+                  Inicia sesión 
                 </p>
               </div>
               <Field>
@@ -48,28 +48,16 @@ export function LoginForm({
                 />
               </Field>
               <Field>
-                <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                </div>
                 <Input id="password" type="password" required />
               </Field>
               <Field>
                 <Button type="submit" className="w-full">Iniciar sesión</Button>
               </Field>
-              <FieldDescription className="text-center text-[14px]">
-                ¿No tienes una cuenta? <a href="#" className="text-[#6C48C5] hover:underline font-semibold">Regístrate</a>
-              </FieldDescription>
             </FieldGroup>
           </form>
           <div className="bg-muted relative hidden md:block">
             <Image
-              src="/LOGOFINAL.png"
+              src="/imagen-1.png"
               alt="Image"
               fill
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"

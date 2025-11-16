@@ -586,7 +586,7 @@ export default function DashboardPage() {
       ws['!cols'] = colWidths
 
       // Agregar worksheet al workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Evolución Temporal')
+      XLSX.utils.book_append_sheet(wb, ws, 'Evolución del impacto de campaña')
 
       // Generar nombre del archivo
       const monthName = 'Rango_fechas'
@@ -596,7 +596,7 @@ export default function DashboardPage() {
             .filter(Boolean)
             .join('_')
         : 'Todas'
-      const fileName = `Evolucion_Temporal_${monthName}_${platformNames}.xlsx`
+      const fileName = `Evolucion_de_impacto_de_campaña_${monthName}_${platformNames}.xlsx`
 
       // Descargar archivo
       XLSX.writeFile(wb, fileName)
@@ -1162,7 +1162,7 @@ export default function DashboardPage() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Evolución Temporal</CardTitle>
+                      <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Evolución del impacto de campaña</CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
                         Vistas, Engagement y Conversiones por día - desde {startDate} hasta {endDate}
                       </CardDescription>

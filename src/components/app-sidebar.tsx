@@ -46,15 +46,16 @@ const data = {
       icon: IconBrandCampaignmonitor,
     },
     {
-      title: "ROI",
+      title: "Retorno inversión",
       url: "/dashboard/roi",
       icon: IconChartInfographic,
     },
-    {
+    /*{
       title: "Reportes",
       url: "/dashboard/reports",
       icon: IconReportAnalytics,
     },
+    */
   ],
 }
 

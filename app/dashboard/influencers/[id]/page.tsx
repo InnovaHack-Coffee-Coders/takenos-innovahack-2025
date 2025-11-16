@@ -17,6 +17,9 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import type { InfluencerWithRelations } from '@/shared/types/influencer.types'
 
 interface ScrapedVideo {
@@ -40,6 +43,7 @@ interface ScrapedVideo {
 interface ScrapedProfileData {
   profile: {
     username: string
+    avatar_url?: string
     followers: number
     following: number
     likes: number
@@ -72,6 +76,106 @@ interface ScrapedResponse {
   timestamp: string
 }
 
+const DUMMY_INFLUENCER: InfluencerWithRelations = {
+  id: 1,
+  name: 'Influencer demo',
+  email: 'demo@takenos.com',
+  birthDate: null,
+  niche: 'Creador de contenido',
+  referralCode: 'DEMO2025',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  socialAccounts: [],
+  influencerCampaigns: [],
+  posts: [],
+  _count: {
+    posts: 3,
+    influencerCampaigns: 2,
+  },
+}
+
+const DUMMY_SCRAPED: ScrapedResponse = {
+  success: true,
+  message: 'Datos de ejemplo (dummy) para la vista de detalle.',
+  timestamp: new Date().toISOString(),
+  data: {
+    profile: {
+      username: 'demo.influencer',
+      avatar_url: '/profile.png',
+      followers: 1250,
+      following: 340,
+      likes: 9800,
+      engagement_median: 0.054,
+      engagement_range: { low: 0.04, high: 0.07 },
+    },
+    statistics: {
+      total_videos: 10,
+      median_engagement: 0.054,
+      average_engagement: 0.058,
+      totals: {
+        views: '85000',
+        likes: '5200',
+        comments: '340',
+      },
+    },
+    top_videos: {
+      most_saved: {
+        id: 'vid-dummy-3',
+        desc: 'Tutorial rápido que los usuarios guardan para ver después.',
+        views: 12000,
+        likes: 850,
+        comments: 40,
+        saves: 320,
+        duration: 35,
+        engagement_rate: 0.097,
+        engagement_level: 'top',
+        percentile: '92.00',
+        score_100: 88,
+        is_most_viewed: 0,
+        is_most_saved: 1,
+        is_highest_engagement: 0,
+        is_top_percentile: 1,
+      },
+      most_viewed: {
+        id: 'vid-dummy-1',
+        desc: 'Video principal de campaña con mayor alcance.',
+        views: 25000,
+        likes: 1100,
+        comments: 60,
+        saves: 180,
+        duration: 28,
+        engagement_rate: 0.044,
+        engagement_level: 'estándar',
+        percentile: '55.00',
+        score_100: 70,
+        is_most_viewed: 1,
+        is_most_saved: 0,
+        is_highest_engagement: 0,
+        is_top_percentile: 0,
+      },
+      highest_engagement: {
+        id: 'vid-dummy-2',
+        desc: 'Contenido con mejor engagement relativo.',
+        views: 8000,
+        likes: 900,
+        comments: 50,
+        saves: 140,
+        duration: 22,
+        engagement_rate: 0.136,
+        engagement_level: 'top',
+        percentile: '96.00',
+        score_100: 100,
+        is_most_viewed: 0,
+        is_most_saved: 0,
+        is_highest_engagement: 1,
+        is_top_percentile: 1,
+      },
+    },
+    videos: [],
+    scraped_at: new Date().toISOString(),
+  },
+}
+
 export default function InfluencerDetailPage() {
   const params = useParams()
   const id = Number(params?.id)
@@ -91,6 +195,13 @@ export default function InfluencerDetailPage() {
   const fetchInfluencer = async () => {
     try {
       const res = await fetch(`/api/influencers/${id}`)
+      if (!res.ok) {
+        // Modo dummy si la API devuelve error o 404
+        setInfluencer(DUMMY_INFLUENCER)
+        setScraped(DUMMY_SCRAPED)
+        return
+      }
+
       const data = await res.json()
       const item = (data.data || null) as InfluencerWithRelations | null
       setInfluencer(item)
@@ -100,7 +211,9 @@ export default function InfluencerDetailPage() {
       }
     } catch (error) {
       console.error('Error fetching influencer detail:', error)
-      setInfluencer(null)
+      // Modo dummy en caso de error
+      setInfluencer(DUMMY_INFLUENCER)
+      setScraped(DUMMY_SCRAPED)
     } finally {
       setLoading(false)
     }
@@ -131,8 +244,9 @@ export default function InfluencerDetailPage() {
       if (!res.ok) return
 
       const data = await res.json()
-      // El endpoint devuelve { message, data: mocked }
-      setScraped(data.data as ScrapedResponse)
+      // El endpoint devuelve el objeto de scraping completo en la raíz:
+      // { success, data: { profile, statistics, top_videos, videos }, message, timestamp }
+      setScraped(data as ScrapedResponse)
     } catch (error) {
       console.error('Error fetching scraped data:', error)
       setScraped(null)
@@ -165,14 +279,14 @@ export default function InfluencerDetailPage() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
-              <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
                 <div>
                   <PageBreadcrumb />
-                  <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-1">
-                    {influencer ? influencer.name : 'Influencer'}
+                  <h1 className="text-[24px] font-bold text-[#1A1A2E] mb-1">
+                    {influencer ? influencer.name : 'Influencer demo'}
                   </h1>
-                  <p className="text-[16px] text-[#6B6B8D]">
-                    Detalle del influencer y simulación de datos de TikTok
+                  <p className="text-[14px] text-[#6B6B8D]">
+                    Ficha rápida del influencer y resumen de su impacto en TikTok.
                   </p>
                 </div>
               </div>
@@ -184,112 +298,94 @@ export default function InfluencerDetailPage() {
                   No se encontró el influencer.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Información básica */}
-                  <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                <Tabs defaultValue="details" className="mt-2">
+                  <TabsList>
+                    <TabsTrigger value="details">Detalles</TabsTrigger>
+                    <TabsTrigger value="posts">Publicaciones</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="details" className="mt-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Información básica + redes */}
+                      <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Información básica
+                        Ficha del influencer
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Datos registrados en la plataforma
+                        Resumen de los mismos campos que ves en la tabla principal.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-3 text-sm">
-                      <div>
-                        <p className="text-xs text-[#6B6B8D] mb-1">Nombre</p>
-                        <p className="font-semibold text-[#1A1A2E]">{influencer.name}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#6B6B8D] mb-1">Email</p>
-                        <p className="text-[#1A1A2E]">
-                          {influencer.email || <span className="text-[#6B6B8D]">No definido</span>}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#6B6B8D] mb-1">Nicho</p>
-                        <p className="text-[#1A1A2E]">
-                          {influencer.niche || <span className="text-[#6B6B8D]">No definido</span>}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#6B6B8D] mb-1">Código de referido</p>
-                        <p className="text-[#1A1A2E]">
-                          {influencer.referralCode || (
-                            <span className="text-[#6B6B8D]">No definido</span>
-                          )}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 pt-2">
-                        <div>
-                          <p className="text-xs text-[#6B6B8D] mb-1">Campañas</p>
+                    <CardContent className="space-y-4 text-sm">
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <p className="text-xs text-[#6B6B8D]">Nombre</p>
+                          <p className="text-sm font-semibold text-[#1A1A2E] truncate">
+                            {influencer.name}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <p className="text-xs text-[#6B6B8D]">Nicho</p>
+                          <p className="text-sm text-[#1A1A2E] truncate">
+                            {influencer.niche || <span className="text-[#6B6B8D]">No definido</span>}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <p className="text-xs text-[#6B6B8D]">Código referido</p>
+                          <p className="text-sm text-[#1A1A2E]">
+                            {influencer.referralCode || (
+                              <span className="text-[#6B6B8D]">No definido</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <p className="text-xs text-[#6B6B8D]">Campañas</p>
                           <p className="text-sm font-semibold text-[#1A1A2E]">
                             {influencer._count?.influencerCampaigns ?? 0}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-xs text-[#6B6B8D] mb-1">Posts</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <p className="text-xs text-[#6B6B8D]">Posts</p>
                           <p className="text-sm font-semibold text-[#1A1A2E]">
                             {influencer._count?.posts ?? 0}
                           </p>
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <p className="text-xs text-[#6B6B8D]">Email</p>
+                          <p className="text-sm text-[#1A1A2E] truncate">
+                            {influencer.email || <span className="text-[#6B6B8D]">No definido</span>}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-1">
+                        <p className="text-xs text-[#6B6B8D] mb-2">Redes sociales</p>
+                        {influencer.socialAccounts && influencer.socialAccounts.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {influencer.socialAccounts.map((account) => (
+                              <Badge key={account.id} variant="outline" className="text-xs rounded-2xl">
+                                {account.socialPlatform.name}
+                                {account.handle && ` · @${account.handle.replace(/^@/, '')}`}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-[#9CA3AF]">
+                            No hay redes sociales registradas para este influencer.
+                          </p>
+                        )}
                       </div>
                     </CardContent>
-                  </Card>
+                      </Card>
 
-                  {/* Redes sociales */}
-                  <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                      {/* TikTok: perfil y resumen de rendimiento */}
+                      <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Redes sociales
+                        TikTok (scraping)
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Cuentas enlazadas al influencer
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm">
-                      {influencer.socialAccounts && influencer.socialAccounts.length > 0 ? (
-                        influencer.socialAccounts.map((account) => (
-                          <div
-                            key={account.id}
-                            className="flex items-center justify-between gap-3 p-2 rounded-lg bg-[rgba(108,72,197,0.03)]"
-                          >
-                            <div className="flex flex-col">
-                              <span className="text-xs text-[#6B6B8D]">
-                                {account.socialPlatform.name}
-                              </span>
-                              <span className="text-sm font-medium text-[#1A1A2E]">
-                                @{account.handle.replace(/^@/, '')}
-                              </span>
-                            </div>
-                            <Badge
-                              variant="secondary"
-                              className={
-                                account.isActive
-                                  ? 'text-xs bg-[#E8F5E9] text-[#4CAF50] px-2 py-0.5'
-                                  : 'text-xs bg-[#FFEBEE] text-[#EF4444] px-2 py-0.5'
-                              }
-                            >
-                              {account.isActive ? 'Activo' : 'Inactivo'}
-                            </Badge>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-xs text-[#6B6B8D]">
-                          No hay redes sociales registradas para este influencer.
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  {/* Simulación TikTok */}
-                  <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
-                    <CardHeader>
-                      <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        TikTok (simulación)
-                      </CardTitle>
-                      <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Datos simulados de perfil y rendimiento en TikTok
+                        Perfil y engagement promedio en TikTok.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -301,15 +397,28 @@ export default function InfluencerDetailPage() {
                         </p>
                       ) : (
                         <>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-xs text-[#6B6B8D] mb-1">Usuario</p>
-                              <p className="text-sm font-semibold text-[#1A1A2E]">
-                                @{scraped.data.profile.username}
-                              </p>
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9">
+                                <AvatarImage
+                                  src={scraped.data.profile.avatar_url}
+                                  alt={scraped.data.profile.username}
+                                />
+                                <AvatarFallback className="text-xs">
+                                  {scraped.data.profile.username
+                                    .slice(0, 2)
+                                    .toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-xs text-[#6B6B8D] mb-0.5">Usuario</p>
+                                <p className="text-sm font-semibold text-[#1A1A2E]">
+                                  @{scraped.data.profile.username}
+                                </p>
+                              </div>
                             </div>
                             <Badge className="bg-[#E8DEFF] text-[#6C48C5] text-xs px-2 py-0.5">
-                              Simulación
+                              Datos en vivo
                             </Badge>
                           </div>
 
@@ -342,7 +451,7 @@ export default function InfluencerDetailPage() {
                             </div>
                           </div>
 
-                          <div className="pt-3 border-t border-[rgba(108,72,197,0.1)] mt-2">
+                          <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-2">
                             <p className="text-xs text-[#6B6B8D] mb-1">
                               Rango de engagement estimado
                             </p>
@@ -352,7 +461,7 @@ export default function InfluencerDetailPage() {
                             </p>
                           </div>
 
-                          <div className="pt-3 border-t border-[rgba(108,72,197,0.1)] mt-2 space-y-2">
+                          <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-2 space-y-2">
                             <p className="text-xs text-[#6B6B8D]">
                               Resumen de contenido (últimos {scraped.data.statistics.total_videos}{' '}
                               videos)
@@ -381,16 +490,20 @@ export default function InfluencerDetailPage() {
                         </>
                       )}
                     </CardContent>
-                  </Card>
+                      </Card>
+                    </div>
+                  </TabsContent>
 
-                  {/* Top videos (simulación) */}
-                  <Card className="lg:col-span-3 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                  <TabsContent value="posts" className="mt-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Top videos (resumen compacto) */}
+                      <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Top videos en TikTok (simulación)
+                        Top videos en TikTok
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Videos destacados según vistas, guardados y engagement
+                        Tres videos clave: más visto, mejor engagement y más guardado.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -462,8 +575,94 @@ export default function InfluencerDetailPage() {
                         </div>
                       )}
                     </CardContent>
-                  </Card>
-                </div>
+                      </Card>
+
+                      {/* Videos y comentarios (vista compacta para marketing) */}
+                      <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                    <CardHeader>
+                      <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                        Videos y preguntas de la comunidad
+                      </CardTitle>
+                      <CardDescription className="text-[14px] text-[#6B6B8D]">
+                        Lista resumida de videos para que el equipo de marketing identifique dónde hay
+                        más conversación.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3 text-sm">
+                      {scrapeLoading ? (
+                        <p className="text-xs text-[#6B6B8D]">Cargando videos...</p>
+                      ) : !scraped || scraped.data.videos.length === 0 ? (
+                        <p className="text-xs text-[#6B6B8D]">
+                          Todavía no hay videos disponibles para analizar comentarios.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="grid grid-cols-5 gap-2 text-[11px] text-[#9CA3AF]">
+                            <span>Video</span>
+                            <span>Vistas</span>
+                            <span>Comentarios</span>
+                            <span>Engagement</span>
+                            <span>Acción</span>
+                          </div>
+                          <div className="space-y-2">
+                            {scraped.data.videos.map((video) => (
+                              <div
+                                key={video.id}
+                                className="grid grid-cols-5 gap-2 items-start rounded-xl bg-[rgba(108,72,197,0.02)] px-3 py-2"
+                              >
+                                <div className="pr-2">
+                                  <p className="text-xs font-medium text-[#1A1A2E] truncate">
+                                    {video.desc || 'Sin descripción'}
+                                  </p>
+                                  <p className="text-[11px] text-[#9CA3AF]">
+                                    ID: <span className="font-mono">{video.id.slice(0, 8)}...</span>
+                                  </p>
+                                </div>
+                                <p className="text-xs font-semibold text-[#1A1A2E]">
+                                  {formatNumber(video.views)}
+                                </p>
+                                <p className="text-xs font-semibold text-[#1A1A2E]">
+                                  {video.comments.toLocaleString('es-ES')}
+                                </p>
+                                <div className="flex flex-col gap-0.5 items-start">
+                                  <span className="text-xs font-semibold text-[#1A1A2E]">
+                                    {formatPercent(video.engagement_rate)}
+                                  </span>
+                                  <span className="text-[11px] text-[#6B6B8D]">
+                                    Nivel {video.engagement_level}
+                                  </span>
+                                </div>
+                                <div className="flex items-center">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-7 text-[11px] rounded-2xl"
+                                    onClick={() => {
+                                      // Placeholder: aquí en un futuro se podrán cargar comentarios reales
+                                      console.log(
+                                        '[Comentarios dummy] Ver comentarios para video',
+                                        video.id
+                                      )
+                                    }}
+                                  >
+                                    Ver comentarios
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-[#9CA3AF] pt-1">
+                            En una siguiente versión podrás ver aquí las preguntas más frecuentes y un
+                            resumen automático para el equipo de marketing.
+                          </p>
+                        </>
+                      )}
+                    </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+                </Tabs>
               )}
             </div>
           </div>

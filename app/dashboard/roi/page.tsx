@@ -405,9 +405,9 @@ export default function RoiPage() {
               {/* Header y filtros */}
               <div className="flex flex-col gap-4 mb-4">
                 <div>
-                  <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">ROI & NAU</h1>
+                  <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Retorno y nuevos clientes por campaña</h1>
                   <p className="text-[16px] text-[#6B6B8D]">
-                    Analiza la evolución del NAU y el ROI por influencer y código de referido.
+                    Analiza el retorno de la inversión (ROI) por influencer, código de referido y campaña.
                   </p>
                 </div>
 
@@ -667,7 +667,7 @@ export default function RoiPage() {
                               <TableCell className="text-[#6B6B8D] text-sm">
                                 {row.username ?? `@influencer_${row.influencerId}`}
                               </TableCell>
-                              <TableCell className="text-[#6B6B8D] text-xs">
+                              <TableCell className="text-[#6B6B8D] text-m">
                                 {(row.socialPlatforms && row.socialPlatforms.length > 0
                                   ? row.socialPlatforms
                                   : ['TikTok', 'Instagram']
@@ -823,7 +823,7 @@ export default function RoiPage() {
                                 <p className="text-xs text-[#6B6B8D]">
                                   Código: {row.referralCode ?? '-'}
                                 </p>
-                                <p className="text-xs text-[#6B6B8D] mt-0.5">
+                                <p className="text-sm text-[#6B6B8D] mt-0.5">
                                   {row.username ?? `@influencer_${row.influencerId}`} ·{' '}
                                   {(row.socialPlatforms && row.socialPlatforms.length > 0
                                     ? row.socialPlatforms
@@ -884,7 +884,7 @@ export default function RoiPage() {
                             <p className="text-sm font-semibold">
                               {row.name} ({row.referralCode ?? 'sin código'})
                             </p>
-                            <p className="text-xs mt-1 text-[#7F1D1D]">
+                            <p className="text-sm mt-1 text-[#7F1D1D]">
                               {row.username ?? `@influencer_${row.influencerId}`} ·{' '}
                               {(row.socialPlatforms && row.socialPlatforms.length > 0
                                 ? row.socialPlatforms

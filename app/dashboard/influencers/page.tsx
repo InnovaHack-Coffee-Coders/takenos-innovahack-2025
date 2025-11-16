@@ -460,8 +460,7 @@ export default function InfluencersPage() {
                         {influencers.map((influencer) => (
                           <TableRow
                             key={influencer.id}
-                            className="border-[rgba(108,72,197,0.1)] hover:bg-[#F8F7FC] cursor-pointer"
-                            onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}
+                            className="border-[rgba(108,72,197,0.1)] hover:bg-[#F8F7FC]"
                           >
                             <TableCell className="font-medium text-[#1A1A2E]">
                               {influencer.name}
@@ -486,7 +485,7 @@ export default function InfluencersPage() {
                                   <div key={account.id} className="flex items-center gap-2">
                                     <Badge
                                       variant="outline"
-                                      className="border-[#6C48C5] text-[#6C48C5] text-xs flex items-center gap-1"
+                                      className="border-[#6C48C5] text-[#6C48C5] flex items-center justify-center p-1 rounded-full"
                                     >
                                       <Image
                                         src={
@@ -501,11 +500,10 @@ export default function InfluencersPage() {
                                             : '/file.svg'
                                         }
                                         alt={getPlatformName(account.platformCode)}
-                                        width={14}
-                                        height={14}
+                                        width={64}
+                                        height={64}
                                         className="rounded-full"
                                       />
-                                      {getPlatformName(account.platformCode)}
                                     </Badge>
                                     {account.handle && (
                                       <span className="text-xs text-[#6B6B8D] truncate max-w-[120px]">
@@ -534,6 +532,17 @@ export default function InfluencersPage() {
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    router.push(`/dashboard/influencers/${influencer.id}`)
+                                  }}
+                                  className="rounded-2xl"
+                                >
+                                  Ver información
+                                </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"

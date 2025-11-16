@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
 import { PageBreadcrumb } from '@/components/page-breadcrumb'
@@ -20,13 +20,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
 import type { InfluencerWithRelations } from '@/shared/types/influencer.types'
 
 interface ScrapedVideo {
@@ -308,14 +301,13 @@ const buildScrapedFromDummyJson = (id: number, raw: DummyJson): ScrapedResponse 
 export default function InfluencerDetailPage() {
   const params = useParams()
   const id = Number(params?.id)
+  const router = useRouter()
 
   const [influencer, setInfluencer] = useState<InfluencerWithRelations | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [scraped, setScraped] = useState<ScrapedResponse | null>(null)
   const [scrapeLoading, setScrapeLoading] = useState(false)
-  const [commentsVideo, setCommentsVideo] = useState<ScrapedVideo | null>(null)
-  const [commentsOpen, setCommentsOpen] = useState(false)
 
   useEffect(() => {
     if (!id || Number.isNaN(id)) return
@@ -779,10 +771,11 @@ export default function InfluencerDetailPage() {
                                     variant="outline"
                                     size="sm"
                                     className="h-7 text-[11px] rounded-2xl"
-                                    onClick={() => {
-                                      setCommentsVideo(video)
-                                      setCommentsOpen(true)
-                                    }}
+                                    onClick={() =>
+                                      router.push(
+                                        `/dashboard/influencers/${influencer.id}/posts/${video.id}`
+                                      )
+                                    }
                                   >
                                     Ver comentarios
                                   </Button>
@@ -806,75 +799,6 @@ export default function InfluencerDetailPage() {
           </div>
         </div>
       </SidebarInset>
-      {/* Modal dummy para comentarios del video */}
-      <Dialog open={commentsOpen} onOpenChange={setCommentsOpen}>
-        <DialogContent className="max-w-2xl rounded-[20px]">
-          <DialogHeader>
-            <DialogTitle className="text-[18px] font-bold text-[#1A1A2E]">
-              Comentarios del video
-            </DialogTitle>
-            <DialogDescription className="text-[14px] text-[#6B6B8D]">
-              Vista dummy con comentarios simulados para análisis de marketing.
-            </DialogDescription>
-          </DialogHeader>
-          {commentsVideo && (
-            <div className="space-y-4 text-sm">
-              <div className="rounded-xl bg-[rgba(108,72,197,0.03)] p-3">
-                <p className="text-xs text-[#6B6B8D] mb-1">Descripción</p>
-                <p className="text-sm text-[#1A1A2E]">
-                  {commentsVideo.desc || 'Sin descripción'}
-                </p>
-                <p className="text-[11px] text-[#9CA3AF] mt-1">
-                  ID:{' '}
-                  <span className="font-mono">
-                    {commentsVideo.id}
-                  </span>
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <p className="text-[11px] text-[#6B6B8D] mb-1">Vistas</p>
-                  <p className="text-sm font-semibold text-[#1A1A2E]">
-                    {formatNumber(commentsVideo.views)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-[#6B6B8D] mb-1">Comentarios</p>
-                  <p className="text-sm font-semibold text-[#1A1A2E]">
-                    {commentsVideo.comments.toLocaleString('es-ES')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-[#6B6B8D] mb-1">Engagement</p>
-                  <p className="text-sm font-semibold text-[#1A1A2E]">
-                    {formatPercent(commentsVideo.engagement_rate)}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs text-[#6B6B8D]">
-                  Comentarios simulados (dummy):
-                </p>
-                <ul className="space-y-1">
-                  <li className="text-sm text-[#1A1A2E] bg-[#F9FAFB] rounded-lg px-3 py-2">
-                    “¿Dónde puedo saber más sobre este tema?” — Usuario A
-                  </li>
-                  <li className="text-sm text-[#1A1A2E] bg-[#F9FAFB] rounded-lg px-3 py-2">
-                    “Me encantó este contenido, ¿habrá segunda parte?” — Usuario B
-                  </li>
-                  <li className="text-sm text-[#1A1A2E] bg-[#F9FAFB] rounded-lg px-3 py-2">
-                    “Tengo esta duda específica, ¿me puedes ayudar?” — Usuario C
-                  </li>
-                </ul>
-              </div>
-              <p className="text-[11px] text-[#9CA3AF]">
-                Más adelante aquí podrás conectar tu análisis con IA (Gemini) para resumir
-                preguntas frecuentes y oportunidades de contenido.
-              </p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </SidebarProvider>
   )
 }

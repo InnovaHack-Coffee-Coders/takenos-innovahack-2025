@@ -10,6 +10,11 @@ export function SiteHeader() {
   const getPageTitle = () => {
     if (pathname === "/dashboard") return "Dashboard"
     if (pathname === "/dashboard/influencers") return "Influencers"
+    if (pathname.startsWith("/dashboard/influencers/")) return "Detalle Influencer"
+    if (pathname === "/dashboard/campaigns") return "Campañas"
+    if (pathname.startsWith("/dashboard/campaigns/")) return pathname.includes("/new") ? "Nueva Campaña" : "Detalle Campaña"
+    if (pathname === "/dashboard/reports") return "Reportes"
+    if (pathname === "/dashboard/metrics") return "Cargar Métricas"
     return "Takenos"
   }
 

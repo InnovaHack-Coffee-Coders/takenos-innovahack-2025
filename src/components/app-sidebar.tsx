@@ -6,6 +6,8 @@ import {
   IconDashboard,
   IconInnerShadowTop,
   IconUsers,
+  IconBrandCampaignmonitor,
+  IconReportAnalytics,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -36,6 +38,16 @@ const data = {
       title: "Influencers",
       url: "/dashboard/influencers",
       icon: IconUsers,
+    },
+    {
+      title: "Campañas",
+      url: "/dashboard/campaigns",
+      icon: IconBrandCampaignmonitor,
+    },
+    {
+      title: "Reportes",
+      url: "/dashboard/reports",
+      icon: IconReportAnalytics,
     },
   ],
 }

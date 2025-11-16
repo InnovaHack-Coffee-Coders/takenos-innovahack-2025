@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// Datos dummy de plataformas
+// Datos dummy de plataformas (modo demo / sin BD)
 const dummyPlatforms = [
   { id: 1, code: 'tiktok', name: 'TikTok' },
   { id: 2, code: 'instagram', name: 'Instagram' },
@@ -10,6 +10,11 @@ const dummyPlatforms = [
 ]
 
 export async function GET() {
+  // Si no hay DATABASE_URL, responder siempre con dummy y no tocar Prisma
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ data: dummyPlatforms })
+  }
+
   try {
     const platforms = await prisma.socialPlatform.findMany({
       orderBy: {

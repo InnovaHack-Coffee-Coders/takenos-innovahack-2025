@@ -17,6 +17,44 @@ interface MetricWhere {
 }
 
 export async function GET(request: NextRequest) {
+  // Si no hay DATABASE_URL, devolver siempre stats dummy (modo demo)
+  if (!process.env.DATABASE_URL) {
+    const dummyStats = {
+      reach: {
+        value: 450000,
+        change: 12.5,
+        isPositive: true,
+      },
+      engagement: {
+        value: 6.5,
+        change: 5.3,
+        isPositive: true,
+      },
+      clicks: {
+        value: 22500,
+        change: 8.2,
+        isPositive: true,
+      },
+      conversions: {
+        value: 1250,
+        change: 15.7,
+        isPositive: true,
+      },
+      ctr: {
+        value: 5.0,
+        change: 0.5,
+        isPositive: true,
+      },
+      revenue: {
+        value: 187500,
+        change: 18.4,
+        isPositive: true,
+      },
+    }
+
+    return NextResponse.json({ data: dummyStats })
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams
     const campaignId = searchParams.get('campaignId')

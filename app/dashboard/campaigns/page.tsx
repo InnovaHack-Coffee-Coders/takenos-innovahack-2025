@@ -92,27 +92,26 @@ export default function CampaignsPage() {
                       No se encontraron campañas. Crea una nueva campaña para comenzar.
                     </div>
                   ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-[rgba(108,72,197,0.1)]">
-                          <TableHead className="text-[#1A1A2E] font-semibold">Nombre</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">País</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">Objetivo</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">Fecha Inicio</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">Fecha Fin</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">Estado</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">Influencers</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold">Posts</TableHead>
-                          <TableHead className="text-[#1A1A2E] font-semibold text-right">Acciones</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {campaigns.map((campaign) => (
-                          <TableRow
-                            key={campaign.id}
-                            className="border-[rgba(108,72,197,0.1)] hover:bg-[#F8F7FC] cursor-pointer"
-                            onClick={() => router.push(`/dashboard/campaigns/${campaign.id}`)}
-                          >
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-[rgba(108,72,197,0.1)]">
+                            <TableHead className="text-[#1A1A2E] font-semibold">Nombre</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">País</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Objetivo</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Fecha Inicio</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Fecha Fin</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Estado</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Influencers</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Posts</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold text-right">Acciones</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {campaigns.map((campaign) => (
+                            <TableRow
+                              key={campaign.id}
+                              className="border-[rgba(108,72,197,0.1)] hover:bg-[#F8F7FC]"
+                            >
                             <TableCell className="font-medium text-[#1A1A2E]">
                               {campaign.name}
                             </TableCell>
@@ -128,7 +127,7 @@ export default function CampaignsPage() {
                             <TableCell className="text-[#6B6B8D]">
                               {formatDate(campaign.endDate)}
                             </TableCell>
-                            <TableCell>
+                                <TableCell>
                               <Badge
                                 variant={campaign.isActive ? 'default' : 'secondary'}
                                 className={

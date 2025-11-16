@@ -110,7 +110,7 @@ export async function PUT(
         description,
         country,
         startDate: startDate ? new Date(startDate) : undefined,
-        endDate: endDate ? new Date(endDate) : null : undefined,
+        endDate: endDate ? new Date(endDate) : null,
         isActive,
         primaryGoalTypeId: primaryGoalTypeId ? parseInt(primaryGoalTypeId) : null,
       },

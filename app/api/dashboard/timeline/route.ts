@@ -28,6 +28,19 @@ interface TimelineItem {
 }
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
+  const groupBy = searchParams.get('groupBy') || 'day' // 'day' | 'week' | 'month'
+
+  // Si no hay DATABASE_URL, devolver siempre timeline dummy (modo demo)
+  if (!process.env.DATABASE_URL) {
+    const start = startDate ? new Date(startDate) : new Date()
+    const end = endDate ? new Date(endDate) : new Date()
+    const dummyTimeline = generateDummyTimeline(start, end, groupBy)
+    return NextResponse.json({ data: dummyTimeline })
+  }
+
   try {
     const searchParams = request.nextUrl.searchParams
     const campaignId = searchParams.get('campaignId')

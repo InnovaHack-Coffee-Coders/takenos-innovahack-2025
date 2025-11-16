@@ -151,6 +151,29 @@ export default function InfluencersPage() {
     return platformNames[code.toLowerCase()] || code
   }
 
+  // Dummy de redes sociales cuando el influencer no tiene cuentas cargadas (modo demo)
+  const getDummySocialAccounts = (influencer: InfluencerWithRelations) => {
+    const baseHandle =
+      influencer.referralCode?.toLowerCase() ||
+      influencer.name.split(' ')[0]?.toLowerCase() ||
+      `influencer${influencer.id}`
+
+    return [
+      {
+        id: `${influencer.id}-tiktok`,
+        platformCode: 'tiktok',
+        handle: `${baseHandle}_tt`,
+        isActive: true,
+      },
+      {
+        id: `${influencer.id}-instagram`,
+        platformCode: 'instagram',
+        handle: `${baseHandle}_ig`,
+        isActive: true,
+      },
+    ]
+  }
+
   return (
     <SidebarProvider
       style={
@@ -317,34 +340,39 @@ export default function InfluencersPage() {
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col gap-2">
-                                {influencer.socialAccounts && influencer.socialAccounts.length > 0 ? (
-                                  influencer.socialAccounts.map((account) => (
-                                    <div key={account.id} className="flex items-center gap-2">
-                                      <Badge
-                                        variant="outline"
-                                        className="border-[#6C48C5] text-[#6C48C5] text-xs"
-                                      >
-                                        {getPlatformName(account.socialPlatform.code)}
-                                      </Badge>
-                                      {account.handle && (
-                                        <span className="text-xs text-[#6B6B8D] truncate max-w-[120px]">
-                                          @{account.handle}
-                                        </span>
-                                      )}
-                                      {account.isActive ? (
-                                        <Badge variant="secondary" className="text-xs bg-[#E8F5E9] text-[#4CAF50] px-1.5 py-0">
-                                          Activo
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="secondary" className="text-xs bg-[#FFEBEE] text-[#EF4444] px-1.5 py-0">
-                                          Inactivo
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  ))
-                                ) : (
-                                  <span className="text-sm text-[#6B6B8D]">Sin redes sociales</span>
-                                )}
+                                {(influencer.socialAccounts && influencer.socialAccounts.length > 0
+                                  ? influencer.socialAccounts.map((account) => ({
+                                      id: account.id,
+                                      platformCode: account.socialPlatform.code,
+                                      handle: account.handle,
+                                      isActive: account.isActive,
+                                    }))
+                                  : getDummySocialAccounts(influencer)
+                                ).map((account) => (
+                                  <div key={account.id} className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className="border-[#6C48C5] text-[#6C48C5] text-xs"
+                                    >
+                                      {getPlatformName(account.platformCode)}
+                                    </Badge>
+                                    {account.handle && (
+                                      <span className="text-xs text-[#6B6B8D] truncate max-w-[120px]">
+                                        @{account.handle.replace(/^@/, '')}
+                                      </span>
+                                    )}
+                                    <Badge
+                                      variant="secondary"
+                                      className={
+                                        account.isActive
+                                          ? 'text-xs bg-[#E8F5E9] text-[#4CAF50] px-1.5 py-0'
+                                          : 'text-xs bg-[#FFEBEE] text-[#EF4444] px-1.5 py-0'
+                                      }
+                                    >
+                                      {account.isActive ? 'Activo' : 'Inactivo'}
+                                    </Badge>
+                                  </div>
+                                ))}
                               </div>
                             </TableCell>
                             <TableCell className="text-[#6B6B8D]">

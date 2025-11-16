@@ -10,6 +10,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
@@ -27,10 +29,27 @@ interface MetricRow {
   revenue?: string
 }
 
+interface SimpleCampaign {
+  id: number
+  name: string
+}
+
+interface SimpleInfluencer {
+  id: number
+  name: string
+}
+
+interface SimplePost {
+  id: number
+  influencer: { id: number; name: string }
+  socialPlatform: { id: number; name: string }
+  publishedAt: string
+}
+
 export default function MetricsPage() {
-  const [campaigns, setCampaigns] = useState<any[]>([])
-  const [influencers, setInfluencers] = useState<any[]>([])
-  const [posts, setPosts] = useState<any[]>([])
+  const [campaigns, setCampaigns] = useState<SimpleCampaign[]>([])
+  const [influencers, setInfluencers] = useState<SimpleInfluencer[]>([])
+  const [posts, setPosts] = useState<SimplePost[]>([])
   const [selectedCampaign, setSelectedCampaign] = useState<string>('all')
   const [selectedInfluencer, setSelectedInfluencer] = useState<string>('all')
   const [rows, setRows] = useState<MetricRow[]>([
@@ -314,14 +333,39 @@ export default function MetricsPage() {
                               <Label htmlFor={`date-${row.id}`} className="text-[12px] text-[#6B6B8D]">
                                 Fecha de Medición *
                               </Label>
-                              <Input
-                                id={`date-${row.id}`}
-                                type="date"
-                                value={row.snapshotDate}
-                                onChange={(e) => updateRow(row.id, 'snapshotDate', e.target.value)}
-                                className="rounded-2xl"
-                                required
-                              />
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full justify-between rounded-2xl text-left font-normal"
+                                  >
+                                    {row.snapshotDate
+                                      ? new Date(row.snapshotDate).toLocaleDateString('es-ES', {
+                                          day: '2-digit',
+                                          month: 'short',
+                                          year: 'numeric',
+                                        })
+                                      : 'Seleccionar fecha'}
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={
+                                      row.snapshotDate ? new Date(row.snapshotDate) : undefined
+                                    }
+                                    onSelect={(date: Date | undefined) =>
+                                      updateRow(
+                                        row.id,
+                                        'snapshotDate',
+                                        date ? date.toISOString().split('T')[0] : ''
+                                      )
+                                    }
+                                    initialFocus
+                                  />
+                                </PopoverContent>
+                              </Popover>
                             </div>
 
                             <div>

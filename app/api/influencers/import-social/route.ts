@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3001'
+
 function extractUsername(value: string): string {
   const trimmed = value.trim()
 
@@ -73,7 +75,7 @@ export async function POST(request: NextRequest) {
     // Llamar a la API de tu backend solo para mostrar su estado (healthcheck)
     let backendHealth: unknown = null
     try {
-      const healthRes = await fetch('http://localhost:3001/health')
+      const healthRes = await fetch(`${BACKEND_BASE_URL}/health`)
       if (healthRes.ok) {
         backendHealth = await healthRes.json()
       } else {
@@ -86,41 +88,61 @@ export async function POST(request: NextRequest) {
       console.error('Error llamando a /health del backend:', healthError)
       backendHealth = {
         status: 'error',
-        message: 'No se pudo conectar a http://localhost:3001/health',
+        message: `No se pudo conectar a ${BACKEND_BASE_URL}/health`,
       }
     }
 
     // Usar la API real de scraping de tu backend (ruta Express: /api/scraping/tiktok)
     try {
-      let scrapingRes = await fetch('http://localhost:3001/api/scraping/tiktok', {
+      const scrapingRes = await fetch(`${BACKEND_BASE_URL}/api/scraping/tiktok`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Enviamos solo username como espera el backend
         body: JSON.stringify({ username }),
       })
 
-      // Si devuelve 404, intentar sin el prefijo /api (por si la ruta real es /scraping/tiktok)
-      if (scrapingRes.status === 404) {
-        scrapingRes = await fetch('http://localhost:3001/scraping/tiktok', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username }),
-        })
-      }
+      const responseBody = await scrapingRes.json().catch(() => null)
 
       if (scrapingRes.ok) {
-        const scrapingData = await scrapingRes.json()
+        // Esperamos que el backend devuelva { success, data, message, ... }
+        type ScrapingSuccessPayload = {
+          success?: boolean
+          data?: unknown
+          message?: string
+          // Permitimos campos extra del backend
+          [key: string]: unknown
+        }
+
+        const payload: ScrapingSuccessPayload =
+          responseBody && typeof responseBody === 'object'
+            ? (responseBody as ScrapingSuccessPayload)
+            : {
+                success: true,
+                data: responseBody,
+              }
+
         return NextResponse.json(
           {
-            message: scrapingData.message ?? `Scraping completado para @${username}`,
-            data: scrapingData,
+            ...payload,
+            message:
+              payload.message ?? `Scraping completado para @${username}`,
             backendHealth,
           },
           { status: 200 },
         )
       }
 
-      console.error('Scraping API respondió con error:', scrapingRes.status)
+      console.error('Scraping API respondió con error:', scrapingRes.status, responseBody)
+
+      return NextResponse.json(
+        {
+          error: 'La API de scraping respondió con error.',
+          statusCode: scrapingRes.status,
+          backendResponse: responseBody,
+          backendHealth,
+        },
+        { status: scrapingRes.status === 404 ? 404 : 502 },
+      )
     } catch (scrapeError) {
       console.error('Error llamando a /api/scraping del backend:', scrapeError)
     }
@@ -134,6 +156,7 @@ export async function POST(request: NextRequest) {
       { status: 502 },
     )
   } catch (error) {
+    console.error('Error procesando la petición de import-social:', error)
     return NextResponse.json(
       {
         error:
@@ -143,5 +166,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
 

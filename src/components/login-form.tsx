@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -34,7 +35,7 @@ export function LoginForm({
               <div className="flex flex-col items-center gap-2 text-center mb-4">
                 <h1 className="text-[28px] font-bold text-[#1A1A2E]">Bienvenido</h1>
                 <p className="text-[#6B6B8D] text-balance text-[16px]">
-                  Inicia sesión en tu cuenta de Takenos
+                  Inicia sesión en tu cuenta de CRM Taken 
                 </p>
               </div>
               <Field>
@@ -67,10 +68,12 @@ export function LoginForm({
             </FieldGroup>
           </form>
           <div className="bg-muted relative hidden md:block">
-            <img
-              src="https://web.santacruzinnova.org.bo/wp-content/uploads/2025/09/1014-x-304-W-INNOVA-SEPT1-1024x307.png"
+            <Image
+              src="/LOGOFINAL.png"
               alt="Image"
+              fill
               className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+              priority
             />
           </div>
         </CardContent>

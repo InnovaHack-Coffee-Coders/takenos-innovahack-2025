@@ -113,13 +113,15 @@ export default function InfluencerSimulationPage() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error || 'Error al obtener la simulación.')
+        setError((data && data.error) || 'Error al obtener la simulación.')
         setResult(null)
         setBackendHealth(null)
         return
       }
 
-      setResult(data.data as ScrapedResponse)
+      // La API /api/scraping/tiktok devuelve el objeto ScrapedResponse en la
+      // raíz del JSON, junto con backendHealth.
+      setResult(data as ScrapedResponse)
       setBackendHealth((data.backendHealth as Record<string, unknown>) ?? null)
     } catch (err) {
       console.error('Error simulando importación:', err)

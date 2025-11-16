@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,10 @@ export default function InfluencersPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [importPlatform, setImportPlatform] = useState<'tiktok' | 'instagram'>('tiktok')
+  const [importValue, setImportValue] = useState('')
+  const [importLoading, setImportLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -140,6 +145,48 @@ export default function InfluencersPage() {
     }
   }
 
+  const handleImportFromSocial = async () => {
+    if (!importValue.trim()) {
+      toast.error('Ingresa un usuario o enlace de perfil')
+      return
+    }
+
+    setImportLoading(true)
+    try {
+      // Endpoint de ejemplo: deberías implementarlo en tu API cuando quieras usar datos reales
+      const res = await fetch('/api/influencers/import-social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: importPlatform,
+          value: importValue.trim(),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success(data.message || 'Influencer importado correctamente')
+        setImportDialogOpen(false)
+        setImportValue('')
+        await fetchInfluencers()
+      } else {
+        // Como aún no existe el endpoint real, dejamos un mensaje amigable
+        toast.error(
+          data.error ||
+            'Esta es una demo: implementa /api/influencers/import-social para conectarte con la API de TikTok/Instagram.'
+        )
+      }
+    } catch (error) {
+      console.error('Error importing influencer from social:', error)
+      toast.error(
+        'No se pudo importar desde la red social. Revisa la URL o inténtalo de nuevo más tarde.'
+      )
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
   // Función helper para obtener el nombre de la plataforma
   const getPlatformName = (code: string) => {
     const platformNames: Record<string, string> = {
@@ -196,7 +243,7 @@ export default function InfluencersPage() {
                     Gestiona y visualiza la información de los influencers
                   </p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-wrap justify-end">
                   <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
                     <DialogTrigger asChild>
                       <Button
@@ -275,6 +322,90 @@ export default function InfluencersPage() {
                           className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-6"
                         >
                           {uploading ? 'Cargando...' : 'Cargar Archivo'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF] rounded-2xl px-6"
+                      >
+                        <IconUpload className="w-4 h-4 mr-2" />
+                        Importar desde TikTok / IG
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="rounded-[20px] max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="text-[20px] font-bold text-[#1A1A2E]">
+                          Importar desde redes sociales
+                        </DialogTitle>
+                        <DialogDescription className="text-[14px] text-[#6B6B8D]">
+                          Pega el usuario o enlace del perfil de TikTok o Instagram. Usaremos esta
+                          información para prellenar los datos del influencer.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <div className="md:col-span-1">
+                            <Label className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                              Plataforma
+                            </Label>
+                            <Select
+                              value={importPlatform}
+                              onValueChange={(value) =>
+                                setImportPlatform(value as 'tiktok' | 'instagram')
+                              }
+                            >
+                              <SelectTrigger className="rounded-2xl">
+                                <SelectValue placeholder="Selecciona" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="tiktok">TikTok</SelectItem>
+                                <SelectItem value="instagram">Instagram</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                              Usuario o enlace de perfil
+                            </Label>
+                            <Input
+                              placeholder="@usuario o https://..."
+                              value={importValue}
+                              onChange={(e) => setImportValue(e.target.value)}
+                              className="rounded-2xl"
+                            />
+                            <p className="text-xs text-[#6B6B8D] mt-2">
+                              Ejemplos: <span className="font-mono">@maria.beauty</span> o{' '}
+                              <span className="font-mono">https://www.tiktok.com/@maria.beauty</span>
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-[#6B6B8D]">
+                          Nota: esta funcionalidad está pensada para conectarse a la API oficial de
+                          cada plataforma o a un servicio intermedio. En este demo, el backend
+                          todavía es un placeholder.
+                        </p>
+                      </div>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setImportDialogOpen(false)
+                            setImportValue('')
+                          }}
+                          className="rounded-2xl"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          onClick={handleImportFromSocial}
+                          disabled={importLoading}
+                          className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-6"
+                        >
+                          {importLoading ? 'Importando...' : 'Importar'}
                         </Button>
                       </DialogFooter>
                     </DialogContent>

@@ -17,52 +17,94 @@ interface MetricWhere {
 }
 
 export async function GET(request: NextRequest) {
-  // Si no hay DATABASE_URL, devolver siempre stats dummy (modo demo)
-  if (!process.env.DATABASE_URL) {
-    const dummyStats = {
+  const searchParams = request.nextUrl.searchParams
+  const campaignId = searchParams.get('campaignId')
+  const influencerId = searchParams.get('influencerId')
+  const socialPlatformId = searchParams.get('socialPlatformId')
+  const startDate = searchParams.get('startDate')
+  const endDate = searchParams.get('endDate')
+
+  // Helper para generar KPIs dummy en modo demo de forma dinámica
+  const buildDummyStats = () => {
+    // Usar campaña, plataforma y mes como semillas
+    const cid = campaignId && campaignId !== 'all' ? parseInt(campaignId) || 0 : 0
+    const pid = socialPlatformId ? parseInt(socialPlatformId) || 0 : 0
+    const dateSeed = startDate
+      ? new Date(startDate).getMonth() + 1
+      : new Date().getMonth() + 1
+
+    const seed = cid * 31 + pid * 17 + dateSeed * 7 || 1
+    const rand = Math.abs(Math.sin(seed * 123.456)) // 0..1
+    const rand2 = Math.abs(Math.sin(seed * 78.9))   // 0..1
+
+    // Alcance base entre 250k y 800k
+    const reachValue = Math.round(250_000 + rand * 550_000)
+
+    // Engagement medio entre 3% y 9%
+    const engagementValue = Number((3 + rand2 * 6).toFixed(2))
+
+    // Conversions ~ 0.15% – 0.4% del reach
+    const conversionsValue = Math.round(reachValue * (0.0015 + rand * 0.0025))
+
+    // Clicks ~ 4% – 7% del reach
+    const clicksValue = Math.round(reachValue * (0.04 + rand2 * 0.03))
+
+    // Revenue ~ 100–200 USD por conversión
+    const revenuePerConv = 100 + rand * 100
+    const revenueValue = Math.round(conversionsValue * revenuePerConv)
+
+    // CTR real
+    const ctrValue = Number(((clicksValue / Math.max(reachValue, 1)) * 100).toFixed(2))
+
+    // Cambios vs mes anterior (-10% a +25%)
+    const changeSeed = Math.abs(Math.sin(seed * 45.67))
+    const reachChange = Number(((changeSeed * 35) - 10).toFixed(1))      // -10% a +25%
+    const engagementChange = Number(((changeSeed * 20) - 5).toFixed(1)) // -5% a +15%
+    const convChange = Number(((changeSeed * 40) - 10).toFixed(1))      // -10% a +30%
+    const ctrChange = Number(((changeSeed * 10) - 3).toFixed(1))        // -3% a +7%
+    const revenueChange = Number(((changeSeed * 45) - 10).toFixed(1))   // -10% a +35%
+
+    return {
       reach: {
-        value: 450000,
-        change: 12.5,
-        isPositive: true,
+        value: reachValue,
+        change: reachChange,
+        isPositive: reachChange >= 0,
       },
       engagement: {
-        value: 6.5,
-        change: 5.3,
-        isPositive: true,
+        value: engagementValue,
+        change: engagementChange,
+        isPositive: engagementChange >= 0,
       },
       clicks: {
-        value: 22500,
-        change: 8.2,
+        value: clicksValue,
+        change: 0, // podríamos hacer dinámico también si se requiere
         isPositive: true,
       },
       conversions: {
-        value: 1250,
-        change: 15.7,
-        isPositive: true,
+        value: conversionsValue,
+        change: convChange,
+        isPositive: convChange >= 0,
       },
       ctr: {
-        value: 5.0,
-        change: 0.5,
-        isPositive: true,
+        value: ctrValue,
+        change: ctrChange,
+        isPositive: ctrChange >= 0,
       },
       revenue: {
-        value: 187500,
-        change: 18.4,
-        isPositive: true,
+        value: revenueValue,
+        change: revenueChange,
+        isPositive: revenueChange >= 0,
       },
     }
+  }
 
+  // Si no hay DATABASE_URL, usar siempre stats dummy dinámicos (modo demo)
+  if (!process.env.DATABASE_URL) {
+    const dummyStats = buildDummyStats()
     return NextResponse.json({ data: dummyStats })
   }
 
   try {
-    const searchParams = request.nextUrl.searchParams
-    const campaignId = searchParams.get('campaignId')
-    const influencerId = searchParams.get('influencerId')
-    const socialPlatformId = searchParams.get('socialPlatformId')
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-
     // Construir filtros para posts
     const postWhere: PostWhere = {}
     
@@ -185,40 +227,8 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching dashboard stats:', error)
     
-    // Retornar datos dummy en caso de error
-    const dummyStats = {
-      reach: {
-        value: 450000,
-        change: 12.5,
-        isPositive: true,
-      },
-      engagement: {
-        value: 6.5,
-        change: 5.3,
-        isPositive: true,
-      },
-      clicks: {
-        value: 22500,
-        change: 8.2,
-        isPositive: true,
-      },
-      conversions: {
-        value: 1250,
-        change: 15.7,
-        isPositive: true,
-      },
-      ctr: {
-        value: 5.0,
-        change: 0.5,
-        isPositive: true,
-      },
-      revenue: {
-        value: 187500,
-        change: 18.4,
-        isPositive: true,
-      },
-    }
-    
+    // Retornar datos dummy dinámicos en caso de error
+    const dummyStats = buildDummyStats()
     return NextResponse.json({ data: dummyStats })
   }
 }

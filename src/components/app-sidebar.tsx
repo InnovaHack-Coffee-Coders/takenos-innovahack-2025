@@ -8,6 +8,7 @@ import {
   IconUsers,
   IconBrandCampaignmonitor,
   IconReportAnalytics,
+  IconChartInfographic,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -43,6 +44,11 @@ const data = {
       title: "Campañas",
       url: "/dashboard/campaigns",
       icon: IconBrandCampaignmonitor,
+    },
+    {
+      title: "ROI",
+      url: "/dashboard/roi",
+      icon: IconChartInfographic,
     },
     {
       title: "Reportes",

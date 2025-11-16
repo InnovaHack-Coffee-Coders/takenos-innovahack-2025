@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { IconPlus, IconTrash, IconArrowLeft, IconX } from '@tabler/icons-react'
+import { IconPlus, IconX } from '@tabler/icons-react'
 import { toast } from 'sonner'
 
 interface SocialAccount {
@@ -303,7 +303,9 @@ export default function NewInfluencerPage() {
                       {socialAccounts.length === 0 ? (
                         <div className="text-center py-8 text-[#6B6B8D] text-sm">
                           <p>No hay cuentas de redes sociales agregadas</p>
-                          <p className="text-xs mt-2">Haz clic en "Agregar" para añadir una cuenta</p>
+                          <p className="text-xs mt-2">
+                            Haz clic en &quot;Agregar&quot; para añadir una cuenta
+                          </p>
                         </div>
                       ) : (
                         <div className="space-y-4">

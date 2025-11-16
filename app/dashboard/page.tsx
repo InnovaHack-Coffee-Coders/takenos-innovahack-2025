@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { CartesianGrid, XAxis, YAxis, Area, AreaChart } from 'recharts'
+import { CartesianGrid, XAxis, YAxis, Area, AreaChart, LabelList } from 'recharts'
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
 import { IconTrendingUp, IconTrendingDown, IconChevronDown, IconX, IconCrown, IconTrophy, IconDownload } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
@@ -157,18 +157,31 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/data/platforms')
       const data = await res.json()
-      const platformsData = data.data || []
+      const platformsData: Array<{ id: number; code: string; name: string }> = data.data || []
       console.log('Platforms fetched:', platformsData) // Debug
       setPlatforms(platformsData)
+
+      // Seleccionar TikTok por defecto si existe, sino la primera plataforma
+      if (platformsData.length > 0 && selectedPlatformIds.length === 0) {
+        const tiktok = platformsData.find((p) => p.code.toLowerCase() === 'tiktok')
+        const defaultId = tiktok ? tiktok.id : platformsData[0].id
+        setSelectedPlatformIds([defaultId])
+      }
     } catch (error) {
       console.error('Error fetching platforms:', error)
       // En caso de error, establecer plataformas por defecto
-      setPlatforms([
+      const fallback = [
         { id: 1, code: 'tiktok', name: 'TikTok' },
         { id: 2, code: 'instagram', name: 'Instagram' },
         { id: 3, code: 'youtube', name: 'YouTube' },
         { id: 4, code: 'x', name: 'X (Twitter)' },
-      ])
+      ]
+      setPlatforms(fallback)
+
+      if (selectedPlatformIds.length === 0) {
+        // Por defecto seleccionar TikTok (id 1) en fallback
+        setSelectedPlatformIds([fallback[0].id])
+      }
     }
   }
 
@@ -222,6 +235,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchPlatforms()
     fetchCampaigns()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -1067,11 +1081,13 @@ export default function DashboardPage() {
                                 strokeWidth={2}
                                 name={`Vistas ${platform.name}`}
                                 stackId={selectedPlatformIds.length > 1 ? 'a' : undefined}
-                              />
+                              >
+                                <LabelList dataKey={`views_${platform.code}`} position="top" />
+                              </Area>
                             )
                           })
                         ) : (
-                          // Si no hay plataformas seleccionadas, mostrar áreas consolidadas
+                          // Si no hay plataformas seleccionadas, mostrar áreas consolidadas con labels
                           <>
                             <Area
                               dataKey="views"
@@ -1080,7 +1096,9 @@ export default function DashboardPage() {
                               stroke="#6C48C5"
                               strokeWidth={2}
                               name="Vistas"
-                            />
+                            >
+                              <LabelList dataKey="views" position="top" />
+                            </Area>
                             <Area
                               dataKey="engagement"
                               type="natural"
@@ -1088,7 +1106,9 @@ export default function DashboardPage() {
                               stroke="#C68FFF"
                               strokeWidth={2}
                               name="Engagement (%)"
-                            />
+                            >
+                              <LabelList dataKey="engagement" position="top" />
+                            </Area>
                             <Area
                               dataKey="conversions"
                               type="natural"
@@ -1096,7 +1116,9 @@ export default function DashboardPage() {
                               stroke="#4CAF50"
                               strokeWidth={2}
                               name="Conversiones"
-                            />
+                            >
+                              <LabelList dataKey="conversions" position="top" />
+                            </Area>
                           </>
                         )}
                         <ChartLegend content={<ChartLegendContent />} />

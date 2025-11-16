@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
+import { PageBreadcrumb } from '@/components/page-breadcrumb'
 import {
   SidebarInset,
   SidebarProvider,
@@ -70,17 +71,10 @@ export default function CampaignDetailPage() {
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
-              <div className="flex items-center gap-4 mb-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push('/dashboard/campaigns')}
-                  className="text-[#6C48C5] hover:text-[#5A3AA8]"
-                >
-                  <IconArrowLeft className="w-4 h-4 mr-2" />
-                  Volver
-                </Button>
+              <div className="flex items-center gap-4 mb-4">
+                
                 <div>
+                  <PageBreadcrumb />
                   <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-1">
                     {campaign ? campaign.name : 'Campaña'}
                   </h1>

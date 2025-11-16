@@ -184,15 +184,7 @@ export default function NewInfluencerPage() {
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
               {/* Header */}
               <div className="flex items-center gap-4 mb-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.back()}
-                  className="text-[#6C48C5] hover:text-[#5A3AA8]"
-                >
-                  <IconArrowLeft className="w-4 h-4 mr-2" />
-                  Volver
-                </Button>
+                
                 <div>
                   <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Nuevo Influencer</h1>
                   <p className="text-[16px] text-[#6B6B8D]">

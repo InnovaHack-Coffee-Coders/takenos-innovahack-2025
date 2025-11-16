@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import {
   IconDashboard,
   IconInnerShadowTop,
@@ -69,9 +70,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <Link href="/" className="text-[#6C48C5] hover:text-[#5A3AA8] transition-colors">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-bold">Takenos</span>
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/logo_color.png"
+                  alt="Takenos"
+                  width={128}
+                  height={128}
+                  className="rounded-md"
+                  priority
+                />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

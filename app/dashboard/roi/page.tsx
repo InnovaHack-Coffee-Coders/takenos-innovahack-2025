@@ -17,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList, ResponsiveContainer } from 'recharts'
-import { IconTrendingUp, IconTrendingDown, IconChevronDown } from '@tabler/icons-react'
+import { IconChevronDown } from '@tabler/icons-react'
 import * as XLSX from 'xlsx'
 import { toast } from 'sonner'
 
@@ -618,89 +618,10 @@ export default function RoiPage() {
                 </div>
               </div>
 
-              {/* Sección principal: Tabla izquierda + Gráfico derecha */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Tabla dinámica NAU / ROI por influencer */}
-                <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
-                  <CardHeader>
-                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                      NAU y ROI por Influencer
-                    </CardTitle>
-                    <CardDescription className="text-[14px] text-[#6B6B8D]">
-                      Código, clientes nuevos y retorno estimado.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {summary.length === 0 ? (
-                      <div className="text-center py-8 text-[#6B6B8D] text-sm">
-                        No hay datos para los filtros seleccionados.
-                      </div>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-[rgba(108,72,197,0.1)]">
-                            <TableHead className="text-[#1A1A2E] font-semibold">Código</TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold">Influencer</TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold">Username</TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold">Redes</TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold">Campaña</TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold text-right">
-                              Clientes nuevos (NAU)
-                            </TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold text-right">
-                              ROI
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {summary.map((row) => (
-                            <TableRow
-                              key={`${row.influencerId}-${row.referralCode ?? 'none'}`}
-                              className="border-[rgba(108,72,197,0.1)]"
-                            >
-                              <TableCell className="text-[#6B6B8D] text-sm">
-                                {row.referralCode ?? '-'}
-                              </TableCell>
-                              <TableCell className="text-sm font-medium text-[#1A1A2E]">
-                                {row.name}
-                              </TableCell>
-                              <TableCell className="text-[#6B6B8D] text-sm">
-                                {row.username ?? `@influencer_${row.influencerId}`}
-                              </TableCell>
-                              <TableCell className="text-[#6B6B8D] text-m">
-                                {(row.socialPlatforms && row.socialPlatforms.length > 0
-                                  ? row.socialPlatforms
-                                  : ['TikTok', 'Instagram']
-                                ).join(' · ')}
-                              </TableCell>
-                              <TableCell className="text-[#6B6B8D] text-sm">
-                                {row.campaignName ?? '-'}
-                              </TableCell>
-                              <TableCell className="text-right text-sm text-[#1A1A2E]">
-                                {row.nau.toLocaleString()}
-                              </TableCell>
-                              <TableCell className="text-right text-sm">
-                                <span
-                                  className={
-                                    row.roi >= 0
-                                      ? 'text-[#4CAF50] font-semibold'
-                                      : 'text-[#EF4444] font-semibold'
-                                  }
-                                >
-                                  {row.roi >= 0 ? '+' : ''}
-                                  {row.roi.toFixed(1)}%
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Gráfico de línea NAU en el tiempo */}
-                <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+              {/* Sección principal: Gráfico arriba y tabla abajo */}
+              <div className="grid grid-cols-1 gap-6">
+                {/* Gráfico de línea NAU en el tiempo (full width) */}
+                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                   <CardHeader className="flex flex-row items-center justify-between gap-4">
                     <div>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
@@ -786,81 +707,91 @@ export default function RoiPage() {
                     )}
                   </CardContent>
                 </Card>
-              </div>
 
-              {/* Sección inferior: Ranking ROI y Alertas */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Ranking mejor ROI */}
-                <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                {/* Tabla dinámica NAU / ROI por influencer (debajo de la gráfica) */}
+                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                   <CardHeader>
                     <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                      Ranking: Influencers con mejor ROI
+                      NAU y ROI por Influencer
                     </CardTitle>
                     <CardDescription className="text-[14px] text-[#6B6B8D]">
-                      Ordenados por ROI estimado para el periodo seleccionado.
+                      Código, clientes nuevos y retorno estimado por cada influencer.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     {summary.length === 0 ? (
-                      <div className="text-center py-6 text-[#6B6B8D] text-sm">
+                      <div className="text-center py-8 text-[#6B6B8D] text-sm">
                         No hay datos para los filtros seleccionados.
                       </div>
                     ) : (
-                      <div className="space-y-2 max-h-[260px] overflow-y-auto">
-                        {summary.slice(0, 10).map((row, index) => (
-                          <div
-                            key={`${row.influencerId}-${row.referralCode ?? 'none'}`}
-                            className="flex items-center justify-between p-3 rounded-xl bg-white border border-[rgba(108,72,197,0.08)]"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-7 h-7 rounded-full bg-[#E8DEFF] flex items-center justify-center text-xs font-bold text-[#6C48C5]">
-                                {index + 1}
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold text-[#1A1A2E]">
-                                  {row.name}
-                                </p>
-                                <p className="text-xs text-[#6B6B8D]">
-                                  Código: {row.referralCode ?? '-'}
-                                </p>
-                                <p className="text-sm text-[#6B6B8D] mt-0.5">
-                                  {row.username ?? `@influencer_${row.influencerId}`} ·{' '}
-                                  {(row.socialPlatforms && row.socialPlatforms.length > 0
-                                    ? row.socialPlatforms
-                                    : ['TikTok', 'Instagram']
-                                  ).join(' · ')}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs text-[#6B6B8D] mb-1">ROI</p>
-                              <div className="flex items-center justify-end gap-1">
-                                {row.roi >= 0 ? (
-                                  <IconTrendingUp className="w-3 h-3 text-[#4CAF50]" />
-                                ) : (
-                                  <IconTrendingDown className="w-3 h-3 text-[#EF4444]" />
-                                )}
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-[rgba(108,72,197,0.1)]">
+                            <TableHead className="text-[#1A1A2E] font-semibold">Código</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Influencer</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Username</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Redes</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold">Campaña</TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold text-right">
+                              Clientes nuevos (NAU)
+                            </TableHead>
+                            <TableHead className="text-[#1A1A2E] font-semibold text-right">
+                              ROI
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {summary.map((row) => (
+                            <TableRow
+                              key={`${row.influencerId}-${row.referralCode ?? 'none'}`}
+                              className="border-[rgba(108,72,197,0.1)]"
+                            >
+                              <TableCell className="text-[#6B6B8D] text-sm">
+                                {row.referralCode ?? '-'}
+                              </TableCell>
+                              <TableCell className="text-sm font-medium text-[#1A1A2E]">
+                                {row.name}
+                              </TableCell>
+                              <TableCell className="text-[#6B6B8D] text-sm">
+                                {row.username ?? `@influencer_${row.influencerId}`}
+                              </TableCell>
+                              <TableCell className="text-[#6B6B8D] text-sm">
+                                {(row.socialPlatforms && row.socialPlatforms.length > 0
+                                  ? row.socialPlatforms
+                                  : ['TikTok', 'Instagram']
+                                ).join(' · ')}
+                              </TableCell>
+                              <TableCell className="text-[#6B6B8D] text-sm">
+                                {row.campaignName ?? '-'}
+                              </TableCell>
+                              <TableCell className="text-right text-sm text-[#1A1A2E]">
+                                {row.nau.toLocaleString()}
+                              </TableCell>
+                              <TableCell className="text-right text-sm">
                                 <span
                                   className={
                                     row.roi >= 0
-                                      ? 'text-[#4CAF50] font-semibold text-sm'
-                                      : 'text-[#EF4444] font-semibold text-sm'
+                                      ? 'text-[#4CAF50] font-semibold'
+                                      : 'text-[#EF4444] font-semibold'
                                   }
                                 >
                                   {row.roi >= 0 ? '+' : ''}
                                   {row.roi.toFixed(1)}%
                                 </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     )}
                   </CardContent>
                 </Card>
+              </div>
 
+              {/* Sección inferior: Alertas */}
+              <div className="grid grid-cols-1 gap-6">
                 {/* Alertas NAU / ROI */}
-                <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                   <CardHeader>
                     <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
                       Alertas

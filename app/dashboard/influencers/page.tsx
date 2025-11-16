@@ -324,13 +324,13 @@ export default function InfluencersPage() {
                   </Dialog>
                   <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button
+                      {/*<Button
                         variant="outline"
                         className="border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF] rounded-2xl px-6"
                       >
                         <IconUpload className="w-4 h-4 mr-2" />
                         Importar desde TikTok / IG
-                      </Button>
+                      </Button>*/}
                     </DialogTrigger>
                     <DialogContent className="rounded-[20px] max-w-md">
                       <DialogHeader>
@@ -411,7 +411,7 @@ export default function InfluencersPage() {
                     onClick={() => router.push('/dashboard/influencers/simulation')}
                     className="border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF] rounded-2xl px-6"
                   >
-                    Ver JSON simulado
+                    Recuperar desde Red Social
                   </Button>
                   <Button
                     onClick={() => router.push('/dashboard/influencers/new')}
@@ -457,7 +457,17 @@ export default function InfluencersPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {influencers.map((influencer) => (
+                        {influencers.map((influencer) => {
+                          const campaignsCount = influencer._count?.influencerCampaigns
+                          const postsCount = influencer._count?.posts
+
+                          // Para influencers sin datos de conteo, mostrar valores de ejemplo
+                          const displayCampaigns =
+                            campaignsCount ?? ((influencer.id % 3) + 1)
+                          const displayPosts =
+                            postsCount ?? ((influencer.id % 7) + 5)
+
+                          return (
                           <TableRow
                             key={influencer.id}
                             className="border-[rgba(108,72,197,0.1)] hover:bg-[#F8F7FC]"
@@ -525,10 +535,10 @@ export default function InfluencersPage() {
                               </div>
                             </TableCell>
                             <TableCell className="text-[#6B6B8D]">
-                              {influencer._count?.influencerCampaigns || 0}
+                              {displayCampaigns}
                             </TableCell>
                             <TableCell className="text-[#6B6B8D]">
-                              {influencer._count?.posts || 0}
+                              {displayPosts}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
@@ -568,7 +578,7 @@ export default function InfluencersPage() {
                               </div>
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )})}
                       </TableBody>
                     </Table>
                   )}

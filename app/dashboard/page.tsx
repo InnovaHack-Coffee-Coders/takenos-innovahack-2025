@@ -586,7 +586,10 @@ export default function DashboardPage() {
       ws['!cols'] = colWidths
 
       // Agregar worksheet al workbook
-      XLSX.utils.book_append_sheet(wb, ws, 'Evolución del impacto de campaña')
+      // Nota: los nombres de hoja en Excel no pueden exceder 31 caracteres.
+      const sheetNameBase = 'Impacto de campaña'
+      const sheetName = sheetNameBase.slice(0, 31)
+      XLSX.utils.book_append_sheet(wb, ws, sheetName)
 
       // Generar nombre del archivo
       const monthName = 'Rango_fechas'

@@ -43,12 +43,20 @@ export function LoginForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="usuario@takenos.com"
+                  defaultValue="admin@takenos.com"
+                  placeholder="admin@takenos.com"
                   required
                 />
               </Field>
               <Field>
-                <Input id="password" type="password" required />
+                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  defaultValue="takenos"
+                  placeholder="takenos"
+                  required
+                />
               </Field>
               <Field>
                 <Button type="submit" className="w-full">Iniciar sesión</Button>

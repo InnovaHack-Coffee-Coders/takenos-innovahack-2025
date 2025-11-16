@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
-import { PageBreadcrumb } from '@/components/page-breadcrumb'
 import {
   SidebarInset,
   SidebarProvider,
@@ -70,7 +69,6 @@ export default function CampaignsPage() {
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <PageBreadcrumb />
                   <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Campañas</h1>
                   <p className="text-[16px] text-[#6B6B8D]">
                     Gestiona y visualiza las campañas de marketing

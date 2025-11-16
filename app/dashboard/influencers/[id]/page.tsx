@@ -76,23 +76,49 @@ interface ScrapedResponse {
   timestamp: string
 }
 
-const createDummyInfluencer = (id: number): InfluencerWithRelations => ({
-  id,
-  name: `Influencer demo ${id}`,
-  email: `demo${id}@takenos.com`,
-  birthDate: null,
-  niche: 'Creador de contenido',
-  referralCode: `DEMO${2000 + id}`,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  socialAccounts: [],
-  influencerCampaigns: [],
-  posts: [],
-  _count: {
-    posts: 0,
-    influencerCampaigns: 0,
-  },
-})
+const DUMMY_NAMES = [
+  'María García',
+  'Carlos Rodríguez',
+  'Ana Martínez',
+  'Luis Fernández',
+  'Sofía Herrera',
+  'Diego López',
+  'Valentina Torres',
+  'Javier Morales',
+]
+
+const DUMMY_NICHES = [
+  'Beauty & Skincare',
+  'Tech & Gadgets',
+  'Fitness & Wellness',
+  'Lifestyle',
+  'Gastronomía',
+  'Educación y tips',
+]
+
+const createDummyInfluencer = (id: number): InfluencerWithRelations => {
+  const name = DUMMY_NAMES[id % DUMMY_NAMES.length]
+  const niche = DUMMY_NICHES[id % DUMMY_NICHES.length]
+  const slug = name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '.')
+
+  return {
+    id,
+    name,
+    email: `${slug}@takenos.com`,
+    birthDate: null,
+    niche,
+    referralCode: `TAKENOS${2000 + id}`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    socialAccounts: [],
+    influencerCampaigns: [],
+    posts: [],
+    _count: {
+      posts: 0,
+      influencerCampaigns: 0,
+    },
+  }
+}
 
 type DummyJson = {
   data?: {
@@ -265,7 +291,7 @@ const buildScrapedFromDummyJson = (id: number, raw: DummyJson): ScrapedResponse 
 
   return {
     success: true,
-    message: 'Datos dummy generados desde json-influencers.json',
+      message: 'Datos de ejemplo obtenidos desde la fuente de TikTok',
     timestamp: new Date().toISOString(),
     data: {
       profile: {
@@ -356,7 +382,7 @@ export default function InfluencerDetailPage() {
     try {
       setScrapeLoading(true)
 
-      // Obtener handle de TikTok si existe, si no, usar el nombre como fallback
+      // Obtener handle de TikTok si existe; si no, usar el nombre como referencia
       const tiktokAccount = item.socialAccounts?.find(
         (acc) => acc.socialPlatform.code.toLowerCase() === 'tiktok',
       )
@@ -381,7 +407,7 @@ export default function InfluencerDetailPage() {
       // { success, data: { profile, statistics, top_videos, videos }, message, timestamp }
       setScraped(data as ScrapedResponse)
     } catch (error) {
-      console.error('Error fetching scraped data:', error)
+      console.error('Error obteniendo datos de TikTok:', error)
       setScraped(null)
     } finally {
       setScrapeLoading(false)
@@ -419,7 +445,7 @@ export default function InfluencerDetailPage() {
                     {influencer ? influencer.name : 'Influencer demo'}
                   </h1>
                   <p className="text-[14px] text-[#6B6B8D]">
-                    Ficha rápida del influencer y resumen de su impacto en TikTok.
+                    Ficha rápida del influencer y resumen de su impacto en redes sociales.
                   </p>
                 </div>
               </div>
@@ -432,9 +458,19 @@ export default function InfluencerDetailPage() {
                 </div>
               ) : (
                 <Tabs defaultValue="details" className="mt-2">
-                  <TabsList>
-                    <TabsTrigger value="details">Detalles</TabsTrigger>
-                    <TabsTrigger value="posts">Publicaciones</TabsTrigger>
+                  <TabsList className="bg-[rgba(108,72,197,0.08)] rounded-2xl px-1 py-1 w-fit">
+                    <TabsTrigger
+                      value="details"
+                      className="rounded-2xl px-4 py-1 text-xs md:text-sm data-[state=active]:bg-[#6C48C5] data-[state=active]:text-white"
+                    >
+                      Detalles
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="posts"
+                      className="rounded-2xl px-4 py-1 text-xs md:text-sm data-[state=active]:bg-[#6C48C5] data-[state=active]:text-white"
+                    >
+                      Publicaciones
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="mt-4">
@@ -443,10 +479,10 @@ export default function InfluencerDetailPage() {
                       <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Ficha del influencer
+                        Resumen del influencer
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Resumen de los mismos campos que ves en la tabla principal.
+                        Información clave que ves en el listado: nicho, código, campañas y actividad.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm">
@@ -515,24 +551,24 @@ export default function InfluencerDetailPage() {
                       <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        TikTok (scraping)
+                        Rendimiento en TikTok
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Perfil y engagement promedio en TikTok.
+                        Perfil y engagement promedio del influencer en TikTok.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
                       {scrapeLoading ? (
-                        <p className="text-xs text-[#6B6B8D]">Cargando datos simulados...</p>
+                        <p className="text-xs text-[#6B6B8D]">Cargando datos de TikTok...</p>
                       ) : !scraped ? (
                         <p className="text-xs text-[#6B6B8D]">
-                          No se pudieron obtener los datos simulados de TikTok.
+                          No se pudieron obtener los datos de TikTok para este influencer.
                         </p>
                       ) : (
                         <>
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9">
+                              <Avatar className="h-24 w-24">
                                 <AvatarImage
                                   src={scraped.data.profile.avatar_url}
                                   alt={scraped.data.profile.username}
@@ -551,7 +587,7 @@ export default function InfluencerDetailPage() {
                               </div>
                             </div>
                             <Badge className="bg-[#E8DEFF] text-[#6C48C5] text-xs px-2 py-0.5">
-                              Datos en vivo
+                              Datos de TikTok
                             </Badge>
                           </div>
 
@@ -597,7 +633,7 @@ export default function InfluencerDetailPage() {
                           <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-2 space-y-2">
                             <p className="text-xs text-[#6B6B8D]">
                               Resumen de contenido (últimos {scraped.data.statistics.total_videos}{' '}
-                              videos)
+                              videos analizados)
                             </p>
                             <div className="grid grid-cols-3 gap-2">
                               <div>
@@ -636,15 +672,15 @@ export default function InfluencerDetailPage() {
                         Top videos en TikTok
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Tres videos clave: más visto, mejor engagement y más guardado.
+                        Tres videos clave según alcance, interacción y guardados.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {scrapeLoading ? (
-                        <p className="text-xs text-[#6B6B8D]">Cargando datos simulados...</p>
+                        <p className="text-xs text-[#6B6B8D]">Cargando datos de videos...</p>
                       ) : !scraped ? (
                         <p className="text-xs text-[#6B6B8D]">
-                          No hay datos simulados para mostrar los top videos.
+                          No hay datos disponibles para mostrar los top videos.
                         </p>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -717,16 +753,15 @@ export default function InfluencerDetailPage() {
                         Videos y preguntas de la comunidad
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Lista resumida de videos para que el equipo de marketing identifique dónde hay
-                        más conversación.
+                        Lista de videos para que marketing identifique dónde se concentran las conversaciones.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
                       {scrapeLoading ? (
-                        <p className="text-xs text-[#6B6B8D]">Cargando videos...</p>
+                        <p className="text-xs text-[#6B6B8D]">Cargando lista de videos...</p>
                       ) : !scraped || scraped.data.videos.length === 0 ? (
                         <p className="text-xs text-[#6B6B8D]">
-                          Todavía no hay videos disponibles para analizar comentarios.
+                          Todavía no hay videos disponibles para analizar las conversaciones.
                         </p>
                       ) : (
                         <>
@@ -768,12 +803,11 @@ export default function InfluencerDetailPage() {
                                 <div className="flex items-center">
                                   <Button
                                     type="button"
-                                    variant="outline"
                                     size="sm"
-                                    className="h-7 text-[11px] rounded-2xl"
+                                    className="h-7 text-[11px] rounded-2xl bg-[#6C48C5] hover:bg-[#5B3AB0] text-white border-0"
                                     onClick={() =>
                                       router.push(
-                                        `/dashboard/influencers/${influencer.id}/posts/${video.id}`
+                                        `/dashboard/influencers/${influencer.id}/posts/${video.id}`,
                                       )
                                     }
                                   >

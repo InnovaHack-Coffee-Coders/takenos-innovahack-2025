@@ -8,6 +8,14 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar'
 import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb'
+import {
   Card,
   CardContent,
   CardHeader,
@@ -27,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { IconSearch } from '@tabler/icons-react'
+import { IconSearch, IconLoader2 } from '@tabler/icons-react'
 
 interface ScrapedVideo {
   id: string
@@ -384,14 +392,33 @@ export default function InfluencerSimulationPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
-                <div>
-                  <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-1">
-                    Simulación de datos de influencer
-                  </h1>
-                  <p className="text-[16px] text-[#6B6B8D]">
-                    Visualiza toda la información que devuelve el JSON de scraping (perfil, estadísticas, top videos y lista completa de videos).
-                  </p>
+              <div className="flex flex-col gap-2 mb-4">
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbLink href="/dashboard/influencers">
+                        Influencers
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Explorar rendimiento</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-1">
+                      Explora el rendimiento de un influencer
+                    </h1>
+                    <p className="text-[16px] text-[#6B6B8D]">
+                      Consulta cómo rinde un perfil de TikTok: perfil, estadísticas principales y sus videos más relevantes.
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -399,10 +426,10 @@ export default function InfluencerSimulationPage() {
               <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                 <CardHeader>
                   <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                    Parámetros de importación simulada
+                    Analizar un perfil de TikTok
                   </CardTitle>
                   <CardDescription className="text-[14px] text-[#6B6B8D]">
-                    Ingresa un usuario o enlace de perfil para probar la simulación. El backend devolverá siempre el JSON de ejemplo, ajustando solo el nombre de usuario.
+                    Ingresa un usuario o enlace de perfil para ver un ejemplo de cómo Takenos presenta la información de rendimiento.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -458,21 +485,21 @@ export default function InfluencerSimulationPage() {
                       >
                         Abrir perfil en TikTok
                       </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={useDemoData}
-                        className="rounded-2xl"
-                      >
-                        Usar datos demo
-                      </Button>
+                      
                     </div>
                     <Button
                       onClick={handleSimulate}
                       disabled={loading}
                       className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-6"
                     >
-                      {loading ? 'Obteniendo datos reales...' : 'Ver datos reales (backend)'}
+                      {loading ? (
+                        <span className="flex items-center gap-2">
+                          <IconLoader2 className="w-4 h-4 animate-spin" />
+                          Cargando datos...
+                        </span>
+                      ) : (
+                        'Ver datos conectados'
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -482,32 +509,16 @@ export default function InfluencerSimulationPage() {
               {result && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Estado del backend (healthcheck) */}
-                  {backendHealth && (
-                    <Card className="lg:col-span-3 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_2px_10px_rgba(108,72,197,0.06)]">
-                      <CardHeader>
-                        <CardTitle className="text-[16px] font-bold text-[#1A1A2E]">
-                          API backend /health
-                        </CardTitle>
-                        <CardDescription className="text-[13px] text-[#6B6B8D]">
-                          Respuesta cruda desde <span className="font-mono">http://localhost:3001/health</span>.
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <pre className="text-[11px] bg-[#0F172A]/90 text-[#E5E7EB] rounded-xl p-3 overflow-x-auto">
-                          {JSON.stringify(backendHealth, null, 2)}
-                        </pre>
-                      </CardContent>
-                    </Card>
-                  )}
+                  
 
                   {/* Perfil y estadísticas generales */}
                   <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Perfil (JSON)
+                        Perfil del influencer
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Datos básicos del perfil en la red social
+                        Datos básicos del perfil en TikTok.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -519,7 +530,7 @@ export default function InfluencerSimulationPage() {
                           </p>
                         </div>
                         <Badge className="bg-[#E8DEFF] text-[#6C48C5] text-xs px-2 py-0.5">
-                          Simulación
+                          Ejemplo
                         </Badge>
                       </div>
 
@@ -583,7 +594,7 @@ export default function InfluencerSimulationPage() {
                         Estadísticas agregadas
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Datos agregados que vienen dentro de <span className="font-mono">statistics</span>
+                        Resumen de volumen, engagement y actividad del perfil.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -635,12 +646,10 @@ export default function InfluencerSimulationPage() {
                   <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Top videos (JSON)
+                        Top videos en TikTok
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Objetos <span className="font-mono">top_videos.most_viewed</span>,{' '}
-                        <span className="font-mono">highest_engagement</span> y{' '}
-                        <span className="font-mono">most_saved</span>
+                        Los videos que mejor funcionan por vistas, interacción y guardados.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3 text-sm">
@@ -705,10 +714,10 @@ export default function InfluencerSimulationPage() {
                   <Card className="lg:col-span-3 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Lista completa de videos (JSON)
+                        Lista completa de videos
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Todos los elementos del array <span className="font-mono">videos[]</span>.
+                        Detalle de cada publicación del perfil y sus métricas clave.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">

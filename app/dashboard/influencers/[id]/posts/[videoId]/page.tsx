@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
+import { PageBreadcrumb } from '@/components/page-breadcrumb'
 import {
   SidebarInset,
   SidebarProvider,
@@ -40,8 +41,6 @@ type DummyJson = {
 
 export default function InfluencerPostCommentsPage() {
   const params = useParams()
-  const router = useRouter()
-  const id = Number(params?.id)
   const videoId = String(params?.videoId || '')
 
   const [loading, setLoading] = useState(true)
@@ -142,23 +141,16 @@ export default function InfluencerPostCommentsPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
               <div className="flex items-center justify-between mb-2 flex-wrap gap-4">
-                <div>
-                  <h1 className="text-[24px] font-bold text-[#1A1A2E] mb-1">
-                    Comentarios del video
+                <div className="space-y-1">
+                  <PageBreadcrumb />
+                  <h1 className="text-[24px] font-bold text-[#1A1A2E]">
+                    Conversaciones en este video
                   </h1>
                   <p className="text-[14px] text-[#6B6B8D]">
-                    Vista dummy para que el equipo de marketing revise las preguntas y feedback de la comunidad.
+                    Aquí puedes revisar de forma sencilla qué están preguntando y comentando
+                    las personas en un contenido concreto.
                   </p>
                 </div>
-                <Button
-                  variant="outline"
-                  className="rounded-2xl"
-                  onClick={() =>
-                    router.push(`/dashboard/influencers/${id}?tab=posts`)
-                  }
-                >
-                  Volver a publicaciones
-                </Button>
               </div>
 
               {loading ? (
@@ -175,7 +167,7 @@ export default function InfluencerPostCommentsPage() {
                   <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Detalle del video
+                        Resumen del video
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
                         @{username} · ID {video.id}
@@ -184,13 +176,13 @@ export default function InfluencerPostCommentsPage() {
                     <CardContent className="space-y-4 text-sm">
                       <div className="rounded-xl bg-[rgba(108,72,197,0.03)] p-3">
                         <p className="text-xs text-[#6B6B8D] mb-1">
-                          Descripción
+                          Descripción del contenido
                         </p>
                         <p className="text-sm text-[#1A1A2E]">
                           {video.desc || 'Sin descripción'}
                         </p>
                       </div>
-                      <div className="grid grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
                           <p className="text-[11px] text-[#6B6B8D] mb-1">
                             Vistas
@@ -217,7 +209,7 @@ export default function InfluencerPostCommentsPage() {
                         </div>
                         <div>
                           <p className="text-[11px] text-[#6B6B8D] mb-1">
-                            Engagement
+                            Engagement del video
                           </p>
                           <p className="text-sm font-semibold text-[#1A1A2E]">
                             {formatPercent(video.engagement_rate)}
@@ -234,7 +226,7 @@ export default function InfluencerPostCommentsPage() {
                   <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_10px_rgba(15,23,42,0.04)]">
                     <CardHeader>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
-                        Comentarios y análisis (dummy)
+                        Comentarios y análisis del video
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
                         Ejemplos de preguntas y feedback que Takenos podría
@@ -244,28 +236,34 @@ export default function InfluencerPostCommentsPage() {
                     <CardContent className="space-y-4 text-sm">
                       <Button
                         type="button"
-                        variant="outline"
-                        className="w-full rounded-2xl"
+                        className="w-full rounded-2xl bg-[#6C48C5] hover:bg-[#5B3AB0] text-white border-0 transition-all duration-200 disabled:opacity-80 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         disabled={analyzing}
                         onClick={handleAnalyze}
                       >
-                        {analyzing ? 'Analizando comentarios...' : 'Analizar comentarios con IA (Gemini)'}
+                        {analyzing && (
+                          <span className="inline-flex h-4 w-4">
+                            <span className="animate-spin h-4 w-4 rounded-full border-2 border-white border-t-transparent" />
+                          </span>
+                        )}
+                        {analyzing
+                          ? 'Analizando comentarios...'
+                          : 'Ver resumen automático de comentarios'}
                       </Button>
 
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <p className="text-xs text-[#6B6B8D]">
-                          Comentarios simulados (dummy):
+                          Ejemplos de comentarios que suelen aparecer en este tipo de contenido:
                         </p>
                         <ul className="space-y-2">
-                          <li className="bg-[#F9FAFB] rounded-lg px-3 py-2 text-[#1A1A2E]">
+                          <li className="bg-[#F9FAFB] rounded-lg px-3 py-2 text-[#1A1A2E] text-xs md:text-sm">
                             “¿Este video pertenece a una campaña específica o es contenido orgánico?”
                             — Equipo marketing
                           </li>
-                          <li className="bg-[#F9FAFB] rounded-lg px-3 py-2 text-[#1A1A2E]">
+                          <li className="bg-[#F9FAFB] rounded-lg px-3 py-2 text-[#1A1A2E] text-xs md:text-sm">
                             “Muchos usuarios están preguntando por el precio, ¿podemos fijar un mensaje destacado con la info?”
                             — Social media
                           </li>
-                          <li className="bg-[#F9FAFB] rounded-lg px-3 py-2 text-[#1A1A2E]">
+                          <li className="bg-[#F9FAFB] rounded-lg px-3 py-2 text-[#1A1A2E] text-xs md:text-sm">
                             “Veo dudas sobre disponibilidad en otros países, ¿armamos un contenido de FAQs internacionales?”
                             — Growth
                           </li>
@@ -273,49 +271,52 @@ export default function InfluencerPostCommentsPage() {
                       </div>
 
                       {analysis && (
-                        <div className="pt-2 border-t border-[rgba(148,163,184,0.3)] space-y-3">
-                          <div>
-                            <p className="text-xs font-semibold text-[#6B6B8D] mb-1">
-                              Preguntas frecuentes detectadas
+                        <div className="pt-4 border-top border-[rgba(148,163,184,0.3)] space-y-4">
+                          <div className="rounded-xl bg-[#F9FAFB] px-4 py-3">
+                            <p className="text-[11px] md:text-xs text-[#6B6B8D] mb-1 font-medium">
+                              Resumen para el equipo de marketing
                             </p>
-                            <ul className="list-disc list-inside text-xs text-[#1F2933] space-y-1">
+                            <p className="text-xs md:text-sm text-[#1F2933] leading-relaxed">
+                              {analysis.summary}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-[#6B6B8D] mb-1 uppercase tracking-wide">
+                              Preguntas frecuentes que se repiten
+                            </p>
+                            <ul className="list-disc list-inside text-xs md:text-sm text-[#1F2933] space-y-1">
                               {analysis.faqs.map((q) => (
                                 <li key={q}>{q}</li>
                               ))}
                             </ul>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-[#6B6B8D] mb-1">
-                              Feedback de los usuarios
+                            <p className="text-xs font-semibold text-[#6B6B8D] mb-1 uppercase tracking-wide">
+                              Comentarios y feedback de la audiencia
                             </p>
-                            <ul className="list-disc list-inside text-xs text-[#1F2933] space-y-1">
+                            <ul className="list-disc list-inside text-xs md:text-sm text-[#1F2933] space-y-1">
                               {analysis.feedback.map((f) => (
                                 <li key={f}>{f}</li>
                               ))}
                             </ul>
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-[#6B6B8D] mb-1">
-                              Posibles problemas o fricciones
+                            <p className="text-xs font-semibold text-[#6B6B8D] mb-1 uppercase tracking-wide">
+                              Posibles fricciones o puntos de mejora
                             </p>
-                            <ul className="list-disc list-inside text-xs text-[#1F2933] space-y-1">
+                            <ul className="list-disc list-inside text-xs md:text-sm text-[#1F2933] space-y-1">
                               {analysis.issues.map((i) => (
                                 <li key={i}>{i}</li>
                               ))}
                             </ul>
                           </div>
-                          <div className="rounded-lg bg-[#F9FAFB] px-3 py-2">
-                            <p className="text-[11px] text-[#6B6B8D] mb-1">
-                              Resumen para marketing (IA)
-                            </p>
-                            <p className="text-xs text-[#1F2933]">{analysis.summary}</p>
-                          </div>
                         </div>
                       )}
                       {!analysis && !analyzing && (
                         <p className="text-[11px] text-[#9CA3AF]">
-                          Haz clic en “Analizar comentarios con IA (Gemini)” para ver un resumen
-                          automático de preguntas, feedback y posibles mejoras para Takenos.
+                          Haz clic en “Ver resumen automático de comentarios” para ver, en un solo
+                          lugar, las preguntas más frecuentes, el feedback y oportunidades de
+                          mejora que podrías convertir en acciones de marketing.
                         </p>
                       )}
                     </CardContent>

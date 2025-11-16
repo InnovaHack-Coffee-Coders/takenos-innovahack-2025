@@ -6,6 +6,9 @@ import {
   IconDashboard,
   IconInnerShadowTop,
   IconUsers,
+  IconBrandCampaignmonitor,
+  IconReportAnalytics,
+  IconChartInfographic,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -36,6 +39,21 @@ const data = {
       title: "Influencers",
       url: "/dashboard/influencers",
       icon: IconUsers,
+    },
+    {
+      title: "Campañas",
+      url: "/dashboard/campaigns",
+      icon: IconBrandCampaignmonitor,
+    },
+    {
+      title: "ROI",
+      url: "/dashboard/roi",
+      icon: IconChartInfographic,
+    },
+    {
+      title: "Reportes",
+      url: "/dashboard/reports",
+      icon: IconReportAnalytics,
     },
   ],
 }

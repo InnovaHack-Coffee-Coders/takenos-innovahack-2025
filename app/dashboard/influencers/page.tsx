@@ -32,6 +32,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { IconSearch, IconPlus, IconEdit, IconTrash, IconUpload, IconFile, IconX } from '@tabler/icons-react'
+import Image from 'next/image'
 import { toast } from 'sonner'
 import type { InfluencerWithRelations } from '@/shared/types/influencer.types'
 
@@ -146,20 +147,19 @@ export default function InfluencersPage() {
   }
 
   const handleImportFromSocial = async () => {
-    if (!importValue.trim()) {
-      toast.error('Ingresa un usuario o enlace de perfil')
+    const trimmed = importValue.trim()
+    if (!trimmed) {
+      toast.error('Ingresa un nombre de usuario')
       return
     }
 
     setImportLoading(true)
     try {
-      // Endpoint de ejemplo: deberías implementarlo en tu API cuando quieras usar datos reales
-      const res = await fetch('/api/influencers/import-social', {
+      const res = await fetch('/api/scraping/tiktok', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          platform: importPlatform,
-          value: importValue.trim(),
+          username: trimmed,
         }),
       })
 
@@ -171,11 +171,7 @@ export default function InfluencersPage() {
         setImportValue('')
         await fetchInfluencers()
       } else {
-        // Como aún no existe el endpoint real, dejamos un mensaje amigable
-        toast.error(
-          data.error ||
-            'Esta es una demo: implementa /api/influencers/import-social para conectarte con la API de TikTok/Instagram.'
-        )
+        toast.error(data.error || 'No se pudo importar desde la red social.')
       }
     } catch (error) {
       console.error('Error importing influencer from social:', error)
@@ -411,6 +407,13 @@ export default function InfluencersPage() {
                     </DialogContent>
                   </Dialog>
                   <Button
+                    variant="outline"
+                    onClick={() => router.push('/dashboard/influencers/simulation')}
+                    className="border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF] rounded-2xl px-6"
+                  >
+                    Ver JSON simulado
+                  </Button>
+                  <Button
                     onClick={() => router.push('/dashboard/influencers/new')}
                     className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-6"
                   >
@@ -483,8 +486,25 @@ export default function InfluencersPage() {
                                   <div key={account.id} className="flex items-center gap-2">
                                     <Badge
                                       variant="outline"
-                                      className="border-[#6C48C5] text-[#6C48C5] text-xs"
+                                      className="border-[#6C48C5] text-[#6C48C5] text-xs flex items-center gap-1"
                                     >
+                                      <Image
+                                        src={
+                                          account.platformCode.toLowerCase() === 'tiktok'
+                                            ? '/logo-tiktok.png'
+                                            : account.platformCode.toLowerCase() === 'instagram'
+                                            ? '/logo-instragram.png'
+                                            : account.platformCode.toLowerCase() === 'youtube'
+                                            ? '/file.svg'
+                                            : account.platformCode.toLowerCase() === 'x'
+                                            ? '/file.svg'
+                                            : '/file.svg'
+                                        }
+                                        alt={getPlatformName(account.platformCode)}
+                                        width={14}
+                                        height={14}
+                                        className="rounded-full"
+                                      />
                                       {getPlatformName(account.platformCode)}
                                     </Badge>
                                     {account.handle && (

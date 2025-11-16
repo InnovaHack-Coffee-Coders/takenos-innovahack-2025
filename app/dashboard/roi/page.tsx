@@ -19,6 +19,8 @@ interface InfluencerOption {
   id: number
   name: string
   referralCode: string | null
+  campaignId?: number | null
+  campaignName?: string | null
 }
 
 interface RoiTimelinePoint {
@@ -30,16 +32,19 @@ interface RoiSummary {
   influencerId: number
   name: string
   referralCode: string | null
+  campaignId?: number | null
+  campaignName?: string | null
   nau: number
   roi: number
 }
 
-// Generar NAU y ROI dummy para un rango de fechas y un conjunto de influencers
+// Generar NAU y ROI dummy para un rango de fechas y un conjunto de influencers,
+// filtrando opcionalmente por campaña y/o código de referido.
 function generateRoiDummyData(
   start: Date,
   end: Date,
   influencers: InfluencerOption[],
-  selectedInfluencerId?: number,
+  selectedCampaignId?: number,
   selectedReferralCode?: string
 ) {
   const timeline: RoiTimelinePoint[] = []
@@ -53,11 +58,16 @@ function generateRoiDummyData(
   }
 
   const effectiveInfluencers =
-    selectedInfluencerId || selectedReferralCode
+    selectedCampaignId || selectedReferralCode
       ? influencers.filter((inf) => {
-          if (selectedInfluencerId && inf.id === selectedInfluencerId) return true
-          if (selectedReferralCode && inf.referralCode === selectedReferralCode) return true
-          return false
+          const matchesCampaign =
+            selectedCampaignId !== undefined && selectedCampaignId !== null
+              ? inf.campaignId === selectedCampaignId
+              : true
+          const matchesReferral = selectedReferralCode
+            ? inf.referralCode === selectedReferralCode
+            : true
+          return matchesCampaign && matchesReferral
         })
       : influencers
 
@@ -90,6 +100,8 @@ function generateRoiDummyData(
       influencerId: inf.id,
       name: inf.name,
       referralCode: inf.referralCode,
+      campaignId: inf.campaignId ?? null,
+      campaignName: inf.campaignName ?? null,
       nau: totalNau,
       roi,
     })
@@ -108,7 +120,7 @@ export default function RoiPage() {
   const [influencers, setInfluencers] = useState<InfluencerOption[]>([])
   const [year, setYear] = useState<string>(new Date().getFullYear().toString())
   const [month, setMonth] = useState<string>((new Date().getMonth() + 1).toString())
-  const [selectedInfluencerId, setSelectedInfluencerId] = useState<string>('all')
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('all')
   const [selectedReferralCode, setSelectedReferralCode] = useState<string>('all')
   const [timeline, setTimeline] = useState<RoiTimelinePoint[]>([])
   const [summary, setSummary] = useState<RoiSummary[]>([])
@@ -152,20 +164,40 @@ export default function RoiPage() {
         id: number
         name: string
         referralCode: string | null
+        influencerCampaigns?: Array<{
+          campaign: { id: number; name: string }
+        }>
       }>
-      const list: InfluencerOption[] = apiInfluencers.map((inf) => ({
-        id: inf.id,
-        name: inf.name,
-        referralCode: inf.referralCode,
-      }))
+
+      const list: InfluencerOption[] = apiInfluencers.flatMap((inf) => {
+        if (!inf.influencerCampaigns || inf.influencerCampaigns.length === 0) {
+          const single: InfluencerOption = {
+            id: inf.id,
+            name: inf.name,
+            referralCode: inf.referralCode,
+            campaignId: undefined,
+            campaignName: undefined,
+          }
+          return [single]
+        }
+
+        return inf.influencerCampaigns.map<InfluencerOption>((ic) => ({
+          id: inf.id,
+          name: inf.name,
+          referralCode: inf.referralCode,
+          campaignId: ic.campaign.id,
+          campaignName: ic.campaign.name,
+        }))
+      })
+
       setInfluencers(list)
     } catch (error) {
       console.error('Error fetching influencers:', error)
       // Dummy mínimo si falla la API
       setInfluencers([
-        { id: 1, name: 'María García', referralCode: 'MARIA2025' },
-        { id: 2, name: 'Carlos Rodríguez', referralCode: 'CARLOS2025' },
-        { id: 3, name: 'Ana Martínez', referralCode: 'ANA2025' },
+        { id: 1, name: 'María García', referralCode: 'MARIA2025', campaignId: 1, campaignName: 'Lanzamiento Takenos' },
+        { id: 2, name: 'Carlos Rodríguez', referralCode: 'CARLOS2025', campaignId: 2, campaignName: 'Performance Q1' },
+        { id: 3, name: 'Ana Martínez', referralCode: 'ANA2025', campaignId: 1, campaignName: 'Lanzamiento Takenos' },
       ])
     }
   }
@@ -198,8 +230,8 @@ export default function RoiPage() {
     const start = new Date(yearNum, monthNum - 1, 1)
     const end = new Date(yearNum, monthNum, 0)
 
-    const effectiveInfluencerId =
-      selectedInfluencerId !== 'all' ? parseInt(selectedInfluencerId) : undefined
+    const effectiveCampaignId =
+      selectedCampaignId !== 'all' ? parseInt(selectedCampaignId) : undefined
     const effectiveReferralCode =
       selectedReferralCode !== 'all' ? selectedReferralCode : undefined
 
@@ -207,14 +239,14 @@ export default function RoiPage() {
       start,
       end,
       influencers,
-      effectiveInfluencerId,
+      effectiveCampaignId,
       effectiveReferralCode
     )
 
     setTimeline(t)
     setSummary(s)
     setLoading(false)
-  }, [year, month, influencers, selectedInfluencerId, selectedReferralCode])
+  }, [year, month, influencers, selectedCampaignId, selectedReferralCode])
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -281,21 +313,30 @@ export default function RoiPage() {
                     </SelectContent>
                   </Select>
 
-                  {/* Influencer */}
+                  {/* Campaña */}
                   <div className="flex items-center gap-2">
-                    <Label className="text-xs text-[#6B6B8D]">Influencer</Label>
+                    <Label className="text-xs text-[#6B6B8D]">Campaña</Label>
                     <Select
-                      value={selectedInfluencerId}
-                      onValueChange={(value) => setSelectedInfluencerId(value)}
+                      value={selectedCampaignId}
+                      onValueChange={setSelectedCampaignId}
                     >
                       <SelectTrigger className="h-10 w-[220px] rounded-2xl">
-                        <SelectValue placeholder="Todos los influencers" />
+                        <SelectValue placeholder="Todas las campañas" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todos los influencers</SelectItem>
-                        {influencers.map((inf) => (
-                          <SelectItem key={inf.id} value={inf.id.toString()}>
-                            {inf.name}
+                        <SelectItem value="all">Todas las campañas</SelectItem>
+                        {Array.from(
+                          new Map(
+                            influencers
+                              .filter((inf) => inf.campaignId != null && inf.campaignName)
+                              .map((inf) => [
+                                inf.campaignId as number,
+                                { id: inf.campaignId as number, name: inf.campaignName as string },
+                              ])
+                          ).values()
+                        ).map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                            {campaign.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -356,8 +397,9 @@ export default function RoiPage() {
                       <Table>
                         <TableHeader>
                           <TableRow className="border-[rgba(108,72,197,0.1)]">
-                            <TableHead className="text-[#1A1A2E] font-semibold">Código</TableHead>
-                            <TableHead className="text-[#1A1A2E] font-semibold">Influencer</TableHead>
+                          <TableHead className="text-[#1A1A2E] font-semibold">Código</TableHead>
+                          <TableHead className="text-[#1A1A2E] font-semibold">Influencer</TableHead>
+                          <TableHead className="text-[#1A1A2E] font-semibold">Campaña</TableHead>
                             <TableHead className="text-[#1A1A2E] font-semibold text-right">
                               Clientes nuevos (NAU)
                             </TableHead>
@@ -377,6 +419,9 @@ export default function RoiPage() {
                               </TableCell>
                               <TableCell className="text-sm font-medium text-[#1A1A2E]">
                                 {row.name}
+                              </TableCell>
+                              <TableCell className="text-[#6B6B8D] text-sm">
+                                {row.campaignName ?? '-'}
                               </TableCell>
                               <TableCell className="text-right text-sm text-[#1A1A2E]">
                                 {row.nau.toLocaleString()}
@@ -455,7 +500,13 @@ export default function RoiPage() {
                                   key={key}
                                   type="monotone"
                                   dataKey={key}
-                                  name={row.referralCode ? row.referralCode : row.name}
+                                  name={
+                                    row.referralCode
+                                      ? `${row.referralCode} / ${row.name}${
+                                          row.campaignName ? ' · ' + row.campaignName : ''
+                                        }`
+                                      : `${row.name}${row.campaignName ? ' · ' + row.campaignName : ''}`
+                                  }
                                   stroke="#6C48C5"
                                   strokeWidth={2}
                                   dot={{ r: 3 }}

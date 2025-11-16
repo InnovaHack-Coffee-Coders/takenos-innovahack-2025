@@ -131,8 +131,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar que no haya emails duplicados (si se proporciona email)
+    // Usamos findFirst porque el email no es clave única en el esquema actual
     if (email && email.trim()) {
-      const existingInfluencer = await prisma.influencer.findUnique({
+      const existingInfluencer = await prisma.influencer.findFirst({
         where: { email: email.trim() },
       })
 
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
     // Validar cuentas de redes sociales
     if (socialAccounts && Array.isArray(socialAccounts)) {
       // Verificar que no haya plataformas duplicadas
-      const platformIds = socialAccounts.map((acc: any) => acc.socialPlatformId)
+      const platformIds = socialAccounts.map((acc: { socialPlatformId: number }) => acc.socialPlatformId)
       const uniquePlatformIds = new Set(platformIds)
       
       if (platformIds.length !== uniquePlatformIds.size) {
@@ -223,8 +224,20 @@ export async function POST(request: NextRequest) {
       // Crear las cuentas de redes sociales si se proporcionaron
       if (socialAccounts && Array.isArray(socialAccounts) && socialAccounts.length > 0) {
         const validAccounts = socialAccounts
-          .filter((acc: any) => acc.socialPlatformId && acc.handle && acc.handle.trim())
-          .map((acc: any) => ({
+          .filter(
+            (acc: {
+              socialPlatformId: number
+              handle: string
+              profileUrl?: string | null
+              isActive?: boolean
+            }) => acc.socialPlatformId && acc.handle && acc.handle.trim()
+          )
+          .map((acc: {
+            socialPlatformId: number
+            handle: string
+            profileUrl?: string | null
+            isActive?: boolean
+          }) => ({
             influencerId: newInfluencer.id,
             socialPlatformId: parseInt(acc.socialPlatformId.toString()),
             handle: acc.handle.replace('@', '').trim(),
@@ -259,19 +272,32 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json({ data: influencer }, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating influencer:', error)
-    
+
     // Manejar errores específicos de Prisma
-    if (error.code === 'P2002') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      (error as { code?: string }).code === 'P2002'
+    ) {
       return NextResponse.json(
         { error: 'Ya existe un registro con estos datos únicos' },
         { status: 400 }
       )
     }
 
+    const message =
+      typeof error === 'object' &&
+      error !== null &&
+      'message' in error &&
+      typeof (error as { message?: string }).message === 'string'
+        ? (error as { message?: string }).message
+        : 'Error al crear influencer'
+
     return NextResponse.json(
-      { error: error.message || 'Error al crear influencer' },
+      { error: message },
       { status: 500 }
     )
   }

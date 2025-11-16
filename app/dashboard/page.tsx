@@ -13,6 +13,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Calendar } from '@/components/ui/calendar'
 import { CartesianGrid, XAxis, YAxis, Area, AreaChart, LabelList } from 'recharts'
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart'
 import { IconTrendingUp, IconTrendingDown, IconChevronDown, IconX, IconCrown, IconTrophy, IconDownload } from '@tabler/icons-react'
@@ -117,8 +120,9 @@ const generateDummyData = (year: number, month: number, selectedPlatformIds: num
 }
 
 export default function DashboardPage() {
-  const currentYear = new Date().getFullYear()
-  const currentMonth = new Date().getMonth() + 1
+  const today = new Date()
+  const currentYear = today.getFullYear()
+  const currentMonth = today.getMonth() + 1
 
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [timeline, setTimeline] = useState<TimelineData[]>([])
@@ -126,18 +130,20 @@ export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<Array<{ id: number; name: string }>>([])
   const [influencerRanking, setInfluencerRanking] = useState<InfluencerRanking[]>([])
   
+  const [dateMode, setDateMode] = useState<'range' | 'monthly'>('range')
+  const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1)
+  const [startDate, setStartDate] = useState<string>(firstDayOfMonth.toISOString().split('T')[0])
+  const [endDate, setEndDate] = useState<string>(today.toISOString().split('T')[0])
   const [year, setYear] = useState<string>(currentYear.toString())
-  const [month, setMonth] = useState<string>(currentMonth.toString())
+  const [selectedMonths, setSelectedMonths] = useState<string[]>([currentMonth.toString()])
   const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]) // canales seleccionados
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('all') // campaña para stats / gráfica / ranking
   const [platformsOpen, setPlatformsOpen] = useState(false)
   
   const [loading, setLoading] = useState(true)
 
-  // Generar años disponibles (últimos 5 años)
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString())
-  
-  // Meses
+
   const months = [
     { value: '1', label: 'Ene' },
     { value: '2', label: 'Feb' },
@@ -152,6 +158,23 @@ export default function DashboardPage() {
     { value: '11', label: 'Nov' },
     { value: '12', label: 'Dic' },
   ]
+
+  const updateDatesFromMonthSelection = (yearValue: string, monthsValues: string[]) => {
+    const yearNum = parseInt(yearValue || currentYear.toString(), 10)
+    const monthNums =
+      monthsValues.length > 0
+        ? monthsValues.map((m) => parseInt(m, 10)).sort((a, b) => a - b)
+        : [currentMonth]
+
+    const firstMonth = monthNums[0]
+    const lastMonth = monthNums[monthNums.length - 1]
+
+    const rangeStart = new Date(yearNum, firstMonth - 1, 1)
+    const rangeEnd = new Date(yearNum, lastMonth, 0)
+
+    setStartDate(rangeStart.toISOString().split('T')[0])
+    setEndDate(rangeEnd.toISOString().split('T')[0])
+  }
 
   const fetchPlatforms = async () => {
     try {
@@ -204,12 +227,11 @@ export default function DashboardPage() {
     try {
       const params = new URLSearchParams()
       
-      // Calcular fechas basadas en año y mes
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-      const endDate = new Date(parseInt(year), parseInt(month), 0)
-      
-      params.append('startDate', startDate.toISOString())
-      params.append('endDate', endDate.toISOString())
+      // Fechas basadas en los filtros de inicio/fin
+      if (startDate && endDate) {
+        params.append('startDate', new Date(startDate).toISOString())
+        params.append('endDate', new Date(endDate).toISOString())
+      }
       params.append('limit', '10')
 
       // Filtro por campaña (usa el selector principal de campaña)
@@ -230,7 +252,7 @@ export default function DashboardPage() {
       // En caso de error, dejar vacío o usar datos dummy
       setInfluencerRanking([])
     }
-  }, [year, month, selectedPlatformIds, selectedCampaignId])
+  }, [startDate, endDate, selectedPlatformIds, selectedCampaignId])
 
   useEffect(() => {
     fetchPlatforms()
@@ -251,19 +273,18 @@ export default function DashboardPage() {
       fetchTimeline()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, month, selectedPlatformIds, selectedCampaignId, platforms.length])
+  }, [startDate, endDate, selectedPlatformIds, selectedCampaignId, platforms.length])
 
   const fetchStats = async () => {
     try {
       setLoading(true)
       const params = new URLSearchParams()
       
-      // Calcular fechas basadas en año y mes
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-      const endDate = new Date(parseInt(year), parseInt(month), 0)
-      
-      params.append('startDate', startDate.toISOString())
-      params.append('endDate', endDate.toISOString())
+      // Fechas basadas en los filtros de inicio/fin
+      if (startDate && endDate) {
+        params.append('startDate', new Date(startDate).toISOString())
+        params.append('endDate', new Date(endDate).toISOString())
+      }
       
       // Filtro por campaña
       if (selectedCampaignId && selectedCampaignId !== 'all') {
@@ -279,10 +300,12 @@ export default function DashboardPage() {
       const res = await fetch(`/api/dashboard/stats?${params.toString()}`)
       const data = await res.json()
       
-          // Si no hay stats, generar datos dummy
-          if (!data.data) {
-            const dummyTimeline = generateDummyData(parseInt(year), parseInt(month), selectedPlatformIds, platforms)
-            const totalViews = dummyTimeline.reduce((sum, item) => sum + item.views, 0)
+      // Si no hay stats, generar datos dummy
+      if (!data.data) {
+        const yearNum = currentYear
+        const monthNum = currentMonth
+        const dummyTimeline = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms)
+        const totalViews = dummyTimeline.reduce((sum, item) => sum + item.views, 0)
         const avgEngagement = dummyTimeline.reduce((sum, item) => sum + item.engagement, 0) / dummyTimeline.length
         const totalConversions = dummyTimeline.reduce((sum, item) => sum + item.conversions, 0)
         const totalClicks = Math.round(totalViews * 0.05) // 5% CTR
@@ -302,7 +325,9 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching stats:', error)
       // En caso de error, generar stats dummy
-      const dummyTimeline = generateDummyData(parseInt(year), parseInt(month), selectedPlatformIds, platforms)
+      const yearNum = currentYear
+      const monthNum = currentMonth
+      const dummyTimeline = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms)
       const totalViews = dummyTimeline.reduce((sum, item) => sum + item.views, 0)
       const avgEngagement = dummyTimeline.reduce((sum, item) => sum + item.engagement, 0) / dummyTimeline.length
       const totalConversions = dummyTimeline.reduce((sum, item) => sum + item.conversions, 0)
@@ -326,12 +351,11 @@ export default function DashboardPage() {
     try {
       const params = new URLSearchParams()
       
-      // Calcular fechas basadas en año y mes
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
-      const endDate = new Date(parseInt(year), parseInt(month), 0)
-      
-      params.append('startDate', startDate.toISOString())
-      params.append('endDate', endDate.toISOString())
+      // Fechas basadas en los filtros de inicio/fin
+      if (startDate && endDate) {
+        params.append('startDate', new Date(startDate).toISOString())
+        params.append('endDate', new Date(endDate).toISOString())
+      }
       params.append('groupBy', 'day')
       
       // Filtro por campaña
@@ -351,7 +375,9 @@ export default function DashboardPage() {
       
       // Si no hay datos, generar datos dummy
       if (timelineData.length === 0) {
-        timelineData = generateDummyData(parseInt(year), parseInt(month), selectedPlatformIds, platforms)
+        const yearNum = currentYear
+        const monthNum = currentMonth
+        timelineData = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms)
         console.log('Using dummy data for timeline', timelineData.length)
       }
       
@@ -413,7 +439,9 @@ export default function DashboardPage() {
       
       // Asegurar que haya al menos un dato válido
       if (validatedData.length === 0) {
-        validatedData = generateDummyData(parseInt(year), parseInt(month), selectedPlatformIds, platforms)
+        const yearNum = currentYear
+        const monthNum = currentMonth
+        validatedData = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms)
       }
       
       console.log('Timeline data:', validatedData.length, 'items') // Debug
@@ -424,7 +452,9 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching timeline:', error)
       // En caso de error, usar datos dummy
-      const dummyData = generateDummyData(parseInt(year), parseInt(month), selectedPlatformIds, platforms)
+      const yearNum = currentYear
+      const monthNum = currentMonth
+      const dummyData = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms)
       setTimeline(dummyData)
     }
   }
@@ -472,9 +502,10 @@ export default function DashboardPage() {
   // Formatear fecha para el eje X
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    const day = date.getDate()
-    const month = months[date.getMonth()]?.label || ''
-    return `${day}-${month.toLowerCase()}`
+    return date.toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+    })
   }
 
   // Función para exportar a Excel
@@ -558,14 +589,14 @@ export default function DashboardPage() {
       XLSX.utils.book_append_sheet(wb, ws, 'Evolución Temporal')
 
       // Generar nombre del archivo
-      const monthName = months[parseInt(month) - 1]?.label || 'Mes'
+      const monthName = 'Rango_fechas'
       const platformNames = selectedPlatformIds.length > 0
         ? selectedPlatformIds
             .map((id) => platforms.find((p) => p.id === id)?.name)
             .filter(Boolean)
             .join('_')
         : 'Todas'
-      const fileName = `Evolucion_Temporal_${monthName}_${year}_${platformNames}.xlsx`
+      const fileName = `Evolucion_Temporal_${monthName}_${platformNames}.xlsx`
 
       // Descargar archivo
       XLSX.writeFile(wb, fileName)
@@ -615,34 +646,188 @@ export default function DashboardPage() {
                 </div>
                 
                 {/* Filtros */}
-                <div className="flex gap-3 flex-wrap">
-                  {/* Año */}
-                  <Select value={year} onValueChange={setYear}>
-                    <SelectTrigger className="h-10 w-[120px] rounded-2xl">
-                      <SelectValue placeholder="Año" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {years.map((y) => (
-                        <SelectItem key={y} value={y}>
-                          {y}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-3 flex-wrap items-center">
+                  {/* Switch modo fechas / mensual */}
+                  <div className="flex items-center gap-2">
+                    <Label className="text-xs text-[#6B6B8D]">Modo mensual</Label>
+                    <Switch
+                      checked={dateMode === 'monthly'}
+                      onCheckedChange={(checked: boolean) => {
+                        const newMode = checked ? 'monthly' : 'range'
+                        setDateMode(newMode)
+                        if (newMode === 'monthly') {
+                          updateDatesFromMonthSelection(year, selectedMonths)
+                        }
+                      }}
+                      className="data-[state=checked]:bg-[#6C48C5]"
+                    />
+                  </div>
 
-                  {/* Mes */}
-                  <Select value={month} onValueChange={setMonth}>
-                    <SelectTrigger className="h-10 w-[120px] rounded-2xl">
-                      <SelectValue placeholder="Mes" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {months.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {dateMode === 'range' ? (
+                    <>
+                      {/* Fecha inicio */}
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-[#6B6B8D]">Fecha inicio</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="h-10 w-[220px] justify-between rounded-2xl text-left font-normal"
+                            >
+                              {startDate
+                                ? new Date(startDate).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })
+                                : 'Seleccionar fecha'}
+                              <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={startDate ? new Date(startDate) : undefined}
+                              onSelect={(date: Date | undefined) => {
+                                if (date) setStartDate(date.toISOString().split('T')[0])
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* Fecha fin */}
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-[#6B6B8D]">Fecha fin</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="h-10 w-[220px] justify-between rounded-2xl text-left font-normal"
+                            >
+                              {endDate
+                                ? new Date(endDate).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })
+                                : 'Seleccionar fecha'}
+                              <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={endDate ? new Date(endDate) : undefined}
+                              onSelect={(date: Date | undefined) => {
+                                if (date) setEndDate(date.toISOString().split('T')[0])
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Año */}
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-[#6B6B8D]">Año</Label>
+                        <Select
+                          value={year}
+                          onValueChange={(value) => {
+                            setYear(value)
+                            updateDatesFromMonthSelection(value, selectedMonths)
+                          }}
+                        >
+                          <SelectTrigger className="h-10 w-[220px] rounded-2xl">
+                            <SelectValue placeholder="Selecciona año" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {years.map((y) => (
+                              <SelectItem key={y} value={y}>
+                                {y}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Meses (multi-select) */}
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs text-[#6B6B8D]">Meses</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="h-10 w-[220px] justify-between rounded-2xl border-[rgba(108,72,197,0.1)]"
+                            >
+                              {selectedMonths.length === 0
+                                ? 'Seleccionar meses'
+                                : selectedMonths.length === 1
+                                ? months.find((m) => m.value === selectedMonths[0])?.label
+                                : `${selectedMonths.length} meses seleccionados`}
+                              <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[220px] p-3 rounded-2xl">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-semibold text-[#1A1A2E]">
+                                Meses
+                              </span>
+                              {selectedMonths.length > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-[10px] text-[#6C48C5]"
+                                  onClick={() => {
+                                    setSelectedMonths([])
+                                    updateDatesFromMonthSelection(year, [])
+                                  }}
+                                >
+                                  Limpiar
+                                </Button>
+                              )}
+                            </div>
+                            <div className="max-h-64 overflow-y-auto space-y-1">
+                              {months.map((m) => {
+                                const checked = selectedMonths.includes(m.value)
+                                return (
+                                  <div
+                                    key={m.value}
+                                    className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(108,72,197,0.05)] cursor-pointer"
+                                    onClick={() => {
+                                      const next = checked
+                                        ? selectedMonths.filter((v) => v !== m.value)
+                                        : [...selectedMonths, m.value]
+                                      setSelectedMonths(next)
+                                      updateDatesFromMonthSelection(year, next)
+                                    }}
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(value) => {
+                                        const isChecked = Boolean(value)
+                                        const next = isChecked
+                                          ? [...selectedMonths, m.value]
+                                          : selectedMonths.filter((v) => v !== m.value)
+                                        setSelectedMonths(next)
+                                        updateDatesFromMonthSelection(year, next)
+                                      }}
+                                      className="border-[#6C48C5] data-[state=checked]:bg-[#6C48C5]"
+                                    />
+                                    <span className="text-xs text-[#1A1A2E]">{m.label}</span>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </>
+                  )}
 
                   {/* Canal de ingreso (Redes sociales) - Multi-select */}
                   <Popover open={platformsOpen} onOpenChange={setPlatformsOpen}>
@@ -651,7 +836,7 @@ export default function DashboardPage() {
                         variant="outline"
                         role="combobox"
                         className={cn(
-                          "h-10 w-[250px] justify-between rounded-2xl border-[rgba(108,72,197,0.1)]",
+                          "h-10 w-[220px] justify-between rounded-2xl border-[rgba(108,72,197,0.1)]",
                           selectedPlatformIds.length === 0 && "text-muted-foreground"
                         )}
                       >
@@ -778,17 +963,24 @@ export default function DashboardPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2">
-                        {stats.reach.isPositive ? (
-                          <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
-                        ) : (
-                          <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
-                        )}
-                        <span className={`text-sm font-semibold ${stats.reach.isPositive ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
-                          {stats.reach.change > 0 ? '+' : ''}{stats.reach.change.toFixed(1)}%
-                        </span>
-                        <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 cursor-default">
+                            {stats.reach.isPositive ? (
+                              <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
+                            ) : (
+                              <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
+                            )}
+                            <span className={`text-sm font-semibold ${stats.reach.isPositive ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
+                              {stats.reach.change > 0 ? '+' : ''}{stats.reach.change.toFixed(1)}%
+                            </span>
+                            <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Cambio porcentual de alcance respecto al periodo anterior.
+                        </TooltipContent>
+                      </Tooltip>
                     </CardContent>
                   </Card>
 
@@ -800,17 +992,24 @@ export default function DashboardPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2">
-                        {stats.engagement.isPositive ? (
-                          <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
-                        ) : (
-                          <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
-                        )}
-                        <span className={`text-sm font-semibold ${stats.engagement.isPositive ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
-                          {stats.engagement.change > 0 ? '+' : ''}{stats.engagement.change.toFixed(1)}%
-                        </span>
-                        <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 cursor-default">
+                            {stats.engagement.isPositive ? (
+                              <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
+                            ) : (
+                              <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
+                            )}
+                            <span className={`text-sm font-semibold ${stats.engagement.isPositive ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
+                              {stats.engagement.change > 0 ? '+' : ''}{stats.engagement.change.toFixed(1)}%
+                            </span>
+                            <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Engagement medio (likes + shares) sobre el alcance en el periodo.
+                        </TooltipContent>
+                      </Tooltip>
                     </CardContent>
                   </Card>
 
@@ -822,17 +1021,24 @@ export default function DashboardPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex items-center gap-2">
-                        {stats.conversions.isPositive ? (
-                          <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
-                        ) : (
-                          <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
-                        )}
-                        <span className={`text-sm font-semibold ${stats.conversions.isPositive ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
-                          {stats.conversions.change > 0 ? '+' : ''}{stats.conversions.change.toFixed(1)}%
-                        </span>
-                        <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center gap-2 cursor-default">
+                            {stats.conversions.isPositive ? (
+                              <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
+                            ) : (
+                              <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
+                            )}
+                            <span className={`text-sm font-semibold ${stats.conversions.isPositive ? 'text-[#4CAF50]' : 'text-[#EF4444]'}`}>
+                              {stats.conversions.change > 0 ? '+' : ''}{stats.conversions.change.toFixed(1)}%
+                            </span>
+                            <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Número de conversiones atribuidas a las campañas en el periodo.
+                        </TooltipContent>
+                      </Tooltip>
                     </CardContent>
                   </Card>
                 </div>
@@ -848,7 +1054,7 @@ export default function DashboardPage() {
                         Ranking Top Influencers
                       </CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        {months[parseInt(month) - 1]?.label} {year}
+                        Desde {startDate} hasta {endDate}
                       </CardDescription>
                     </CardHeader>
                   <CardContent className="p-4">
@@ -958,7 +1164,7 @@ export default function DashboardPage() {
                     <div>
                       <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Evolución Temporal</CardTitle>
                       <CardDescription className="text-[14px] text-[#6B6B8D]">
-                        Vistas, Engagement y Conversiones por día - {months[parseInt(month) - 1]?.label} {year}
+                        Vistas, Engagement y Conversiones por día - desde {startDate} hasta {endDate}
                       </CardDescription>
                     </div>
                     <Button

@@ -12,6 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { IconArrowLeft } from '@tabler/icons-react'
@@ -251,16 +253,35 @@ export default function NewCampaignPage() {
                           Fecha de inicio{' '}
                           <span className="text-[#EF4444]">*</span>
                         </Label>
-                        <Input
-                          id="startDate"
-                          type="date"
-                          value={formData.startDate}
-                          onChange={(e) =>
-                            handleInputChange('startDate', e.target.value)
-                          }
-                          className="rounded-2xl"
-                          required
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-between rounded-2xl text-left font-normal"
+                            >
+                              {formData.startDate
+                                ? new Date(formData.startDate).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })
+                                : 'Seleccionar fecha'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={formData.startDate ? new Date(formData.startDate) : undefined}
+                              onSelect={(date: Date | undefined) =>
+                                handleInputChange(
+                                  'startDate',
+                                  date ? date.toISOString().split('T')[0] : ''
+                                )
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       <div>
@@ -270,15 +291,35 @@ export default function NewCampaignPage() {
                         >
                           Fecha de fin
                         </Label>
-                        <Input
-                          id="endDate"
-                          type="date"
-                          value={formData.endDate}
-                          onChange={(e) =>
-                            handleInputChange('endDate', e.target.value)
-                          }
-                          className="rounded-2xl"
-                        />
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-between rounded-2xl text-left font-normal"
+                            >
+                              {formData.endDate
+                                ? new Date(formData.endDate).toLocaleDateString('es-ES', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })
+                                : 'Seleccionar fecha'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={formData.endDate ? new Date(formData.endDate) : undefined}
+                                  onSelect={(date: Date | undefined) =>
+                                handleInputChange(
+                                  'endDate',
+                                  date ? date.toISOString().split('T')[0] : ''
+                                )
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </div>
                     </div>
 

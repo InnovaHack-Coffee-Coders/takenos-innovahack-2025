@@ -122,16 +122,15 @@ export default function DashboardPage() {
 
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [timeline, setTimeline] = useState<TimelineData[]>([])
-  const [influencers, setInfluencers] = useState<Array<{ id: number; name: string }>>([])
   const [platforms, setPlatforms] = useState<Array<{ id: number; name: string; code: string }>>([])
+  const [campaigns, setCampaigns] = useState<Array<{ id: number; name: string }>>([])
   const [influencerRanking, setInfluencerRanking] = useState<InfluencerRanking[]>([])
   
   const [year, setYear] = useState<string>(currentYear.toString())
   const [month, setMonth] = useState<string>(currentMonth.toString())
-  const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]) // Array de IDs seleccionados
-  const [selectedInfluencerIds, setSelectedInfluencerIds] = useState<number[]>([]) // Array de IDs de influencers seleccionados
+  const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]) // canales seleccionados
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>('all') // campaña para stats / gráfica / ranking
   const [platformsOpen, setPlatformsOpen] = useState(false)
-  const [influencersOpen, setInfluencersOpen] = useState(false)
   
   const [loading, setLoading] = useState(true)
 
@@ -173,13 +172,18 @@ export default function DashboardPage() {
     }
   }
 
-  const fetchInfluencers = async () => {
+  const fetchCampaigns = async () => {
     try {
-      const res = await fetch('/api/influencers')
+      const res = await fetch('/api/campaigns')
       const data = await res.json()
-      setInfluencers(data.data || [])
+      const apiCampaigns = (data.data || []) as Array<{ id: number; name: string }>
+      const list = apiCampaigns.map((c) => ({
+        id: c.id,
+        name: c.name,
+      }))
+      setCampaigns(list)
     } catch (error) {
-      console.error('Error fetching influencers:', error)
+      console.error('Error fetching campaigns:', error)
     }
   }
 
@@ -194,6 +198,11 @@ export default function DashboardPage() {
       params.append('startDate', startDate.toISOString())
       params.append('endDate', endDate.toISOString())
       params.append('limit', '10')
+
+      // Filtro por campaña (usa el selector principal de campaña)
+      if (selectedCampaignId && selectedCampaignId !== 'all') {
+        params.append('campaignId', selectedCampaignId)
+      }
       
       // Agregar múltiples plataformas si hay seleccionadas
       if (selectedPlatformIds.length > 0) {
@@ -208,11 +217,11 @@ export default function DashboardPage() {
       // En caso de error, dejar vacío o usar datos dummy
       setInfluencerRanking([])
     }
-  }, [year, month, selectedPlatformIds])
+  }, [year, month, selectedPlatformIds, selectedCampaignId])
 
   useEffect(() => {
     fetchPlatforms()
-    fetchInfluencers()
+    fetchCampaigns()
   }, [])
 
   useEffect(() => {
@@ -228,7 +237,7 @@ export default function DashboardPage() {
       fetchTimeline()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [year, month, selectedPlatformIds, selectedInfluencerIds, platforms.length])
+  }, [year, month, selectedPlatformIds, selectedCampaignId, platforms.length])
 
   const fetchStats = async () => {
     try {
@@ -242,16 +251,14 @@ export default function DashboardPage() {
       params.append('startDate', startDate.toISOString())
       params.append('endDate', endDate.toISOString())
       
+      // Filtro por campaña
+      if (selectedCampaignId && selectedCampaignId !== 'all') {
+        params.append('campaignId', selectedCampaignId)
+      }
       // Agregar múltiples plataformas
       if (selectedPlatformIds.length > 0) {
         selectedPlatformIds.forEach((id) => {
           params.append('socialPlatformId', id.toString())
-        })
-      }
-      // Agregar múltiples influencers
-      if (selectedInfluencerIds.length > 0) {
-        selectedInfluencerIds.forEach((id) => {
-          params.append('influencerId', id.toString())
         })
       }
 
@@ -313,18 +320,16 @@ export default function DashboardPage() {
       params.append('endDate', endDate.toISOString())
       params.append('groupBy', 'day')
       
-          // Agregar múltiples plataformas
-          if (selectedPlatformIds.length > 0) {
-            selectedPlatformIds.forEach((id) => {
-              params.append('socialPlatformId', id.toString())
-            })
-          }
-          // Agregar múltiples influencers
-          if (selectedInfluencerIds.length > 0) {
-            selectedInfluencerIds.forEach((id) => {
-              params.append('influencerId', id.toString())
-            })
-          }
+      // Filtro por campaña
+      if (selectedCampaignId) {
+        params.append('campaignId', selectedCampaignId)
+      }
+      // Agregar múltiples plataformas
+      if (selectedPlatformIds.length > 0) {
+        selectedPlatformIds.forEach((id) => {
+          params.append('socialPlatformId', id.toString())
+        })
+      }
 
       const res = await fetch(`/api/dashboard/timeline?${params.toString()}`)
       const data = await res.json()
@@ -466,13 +471,10 @@ export default function DashboardPage() {
     }
 
     try {
-      // Obtener información de influencers y plataformas seleccionadas
-      const selectedInfluencerNames = selectedInfluencerIds.length > 0
-        ? selectedInfluencerIds
-            .map((id) => influencers.find((i) => i.id === id)?.name)
-            .filter(Boolean)
-            .join(', ')
-        : 'Todos los influencers'
+      // Obtener información de campaña y plataformas seleccionadas
+      const selectedCampaignName = selectedCampaignId && selectedCampaignId !== 'all'
+        ? campaigns.find((c) => c.id === Number(selectedCampaignId))?.name ?? 'Campaña seleccionada'
+        : 'Todas las campañas'
       
       const selectedPlatformNames = selectedPlatformIds.length > 0
         ? selectedPlatformIds
@@ -494,8 +496,8 @@ export default function DashboardPage() {
         // Agregar columna de Canales/Tipos de canales
         row['Canales'] = selectedPlatformNames
 
-        // Agregar columna de Influencer(es)
-        row['Influencers'] = selectedInfluencerNames
+        // Agregar columna de Campaña
+        row['Campaña'] = selectedCampaignName
 
         // Si hay múltiples plataformas seleccionadas, agregar columnas por plataforma
         if (selectedPlatformIds.length > 1) {
@@ -731,108 +733,23 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {/* Influencers - Multi-select */}
-                  <Popover open={influencersOpen} onOpenChange={setInfluencersOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "h-10 w-[250px] justify-between rounded-2xl border-[rgba(108,72,197,0.1)]",
-                          selectedInfluencerIds.length === 0 && "text-muted-foreground"
-                        )}
-                      >
-                        {selectedInfluencerIds.length === 0
-                          ? "Seleccionar influencers"
-                          : selectedInfluencerIds.length === 1
-                          ? influencers.find((i) => i.id === selectedInfluencerIds[0])?.name || "1 influencer seleccionado"
-                          : `${selectedInfluencerIds.length} influencers seleccionados`}
-                        <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[250px] p-4 rounded-2xl">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <Label className="text-sm font-semibold text-[#1A1A2E]">Influencers</Label>
-                          {selectedInfluencerIds.length > 0 && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs text-[#6C48C5]"
-                              onClick={() => setSelectedInfluencerIds([])}
-                            >
-                              Limpiar
-                            </Button>
-                          )}
-                        </div>
-                        {influencers.length > 0 ? (
-                          influencers.map((influencer) => {
-                            const isSelected = selectedInfluencerIds.includes(influencer.id)
-                            return (
-                              <div
-                                key={influencer.id}
-                                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-[rgba(108,72,197,0.05)] cursor-pointer"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setSelectedInfluencerIds(selectedInfluencerIds.filter((id) => id !== influencer.id))
-                                  } else {
-                                    setSelectedInfluencerIds([...selectedInfluencerIds, influencer.id])
-                                  }
-                                }}
-                              >
-                                <Checkbox
-                                  id={`influencer-${influencer.id}`}
-                                  checked={isSelected}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedInfluencerIds([...selectedInfluencerIds, influencer.id])
-                                    } else {
-                                      setSelectedInfluencerIds(selectedInfluencerIds.filter((id) => id !== influencer.id))
-                                    }
-                                  }}
-                                  className="border-[#6C48C5] data-[state=checked]:bg-[#6C48C5]"
-                                />
-                                <Label
-                                  htmlFor={`influencer-${influencer.id}`}
-                                  className="flex-1 cursor-pointer text-sm text-[#1A1A2E] font-medium"
-                                >
-                                  {influencer.name}
-                                </Label>
-                              </div>
-                            )
-                          })
-                        ) : (
-                          <div className="text-sm text-[#6B6B8D] py-2">Cargando influencers...</div>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Mostrar badges de influencers seleccionados */}
-                  {selectedInfluencerIds.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedInfluencerIds.map((influencerId) => {
-                        const influencer = influencers.find((i) => i.id === influencerId)
-                        if (!influencer) return null
-                        return (
-                          <div
-                            key={influencerId}
-                            className="flex items-center gap-1 px-2 py-1 bg-[#E8DEFF] text-[#6C48C5] rounded-lg text-xs font-medium"
-                          >
-                            {influencer.name}
-                            <button
-                              onClick={() => {
-                                setSelectedInfluencerIds(selectedInfluencerIds.filter((id) => id !== influencerId))
-                              }}
-                              className="ml-1 hover:bg-[#6C48C5] hover:text-white rounded-full p-0.5"
-                            >
-                              <IconX className="h-3 w-3" />
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                  {/* Campañas - selector simple */}
+                  <Select
+                    value={selectedCampaignId}
+                    onValueChange={setSelectedCampaignId}
+                  >
+                    <SelectTrigger className="h-10 w-[220px] rounded-2xl">
+                      <SelectValue placeholder="Todas las campañas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las campañas</SelectItem>
+                      {campaigns.map((campaign) => (
+                        <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                          {campaign.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -911,15 +828,15 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Ranking de Influencers - 1/4 */}
                 <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
-                  <CardHeader>
-                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E] flex items-center gap-2">
-                      <IconTrophy className="w-5 h-5 text-[#FFD700]" />
-                      Ranking Top Influencers
-                    </CardTitle>
-                    <CardDescription className="text-[14px] text-[#6B6B8D]">
-                      {months[parseInt(month) - 1]?.label} {year}
-                    </CardDescription>
-                  </CardHeader>
+                    <CardHeader className="space-y-1">
+                      <CardTitle className="text-[18px] font-bold text-[#1A1A2E] flex items-center gap-2">
+                        <IconTrophy className="w-5 h-5 text-[#FFD700]" />
+                        Ranking Top Influencers
+                      </CardTitle>
+                      <CardDescription className="text-[14px] text-[#6B6B8D]">
+                        {months[parseInt(month) - 1]?.label} {year}
+                      </CardDescription>
+                    </CardHeader>
                   <CardContent className="p-4">
                     {influencerRanking.length === 0 ? (
                       <div className="flex items-center justify-center h-[400px] text-[#6B6B8D] text-sm">

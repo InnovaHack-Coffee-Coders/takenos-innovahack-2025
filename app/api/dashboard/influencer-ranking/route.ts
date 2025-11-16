@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
   const startDate = searchParams.get('startDate')
   const endDate = searchParams.get('endDate')
   const socialPlatformId = searchParams.get('socialPlatformId')
+  const campaignId = searchParams.get('campaignId')
   const limit = parseInt(searchParams.get('limit') || '10')
 
   const baseDummyRankings: InfluencerRanking[] = [
@@ -89,22 +90,158 @@ export async function GET(request: NextRequest) {
       engagementRate: 7.1,
       roi: 52.4,
     },
+    {
+      id: 6,
+      name: 'Diego Morales',
+      email: 'diego@example.com',
+      niche: 'Food & Cooking',
+      rank: 6,
+      totalViews: 240000,
+      totalEngagement: 6.2,
+      totalConversions: 720,
+      totalRevenue: 108000,
+      engagementRate: 6.2,
+      roi: 45.1,
+    },
+    {
+      id: 7,
+      name: 'Valentina Ruiz',
+      email: 'valentina@example.com',
+      niche: 'Music & Entertainment',
+      rank: 7,
+      totalViews: 260000,
+      totalEngagement: 7.8,
+      totalConversions: 840,
+      totalRevenue: 126000,
+      engagementRate: 7.8,
+      roi: 57.3,
+    },
+    {
+      id: 8,
+      name: 'Andrés Sánchez',
+      email: 'andres@example.com',
+      niche: 'Sports & Fitness',
+      rank: 8,
+      totalViews: 300000,
+      totalEngagement: 6.9,
+      totalConversions: 910,
+      totalRevenue: 136500,
+      engagementRate: 6.9,
+      roi: 49.8,
+    },
+    {
+      id: 9,
+      name: 'Laura Castillo',
+      email: 'laura@example.com',
+      niche: 'Travel & Lifestyle',
+      rank: 9,
+      totalViews: 210000,
+      totalEngagement: 5.9,
+      totalConversions: 640,
+      totalRevenue: 96000,
+      engagementRate: 5.9,
+      roi: 40.4,
+    },
+    {
+      id: 10,
+      name: 'Miguel Torres',
+      email: 'miguel@example.com',
+      niche: 'Gaming & Streaming',
+      rank: 10,
+      totalViews: 275000,
+      totalEngagement: 8.5,
+      totalConversions: 990,
+      totalRevenue: 148500,
+      engagementRate: 8.5,
+      roi: 63.7,
+    },
   ]
 
-  // Si no hay DATABASE_URL, devolver siempre ranking dummy (modo demo)
+  // Si no hay DATABASE_URL, devolver ranking dummy (modo demo), pero
+  // hacerlo sensible a la campaña seleccionada y mezclar el orden para que se vea dinámico.
   if (!process.env.DATABASE_URL) {
-    return NextResponse.json({ data: baseDummyRankings.slice(0, limit) })
+    // Sin campaña: devolver el ranking base
+    if (!campaignId || campaignId === 'all') {
+      return NextResponse.json({ data: baseDummyRankings.slice(0, limit) })
+    }
+
+    const cid = parseInt(campaignId)
+    const seed = isNaN(cid) ? 1 : cid
+
+    // Ajustar métricas por campaña para simular diferencias de performance
+    const adjusted = baseDummyRankings.map((inf, index) => {
+      // Pseudo random determinista basado en campaña + índice
+      const rand =
+        Math.abs(
+          Math.sin(seed * 1000 + index * 97 + inf.id * 31)
+        ) // 0..1 aprox
+      const factor = 0.85 + rand * 0.4 // 0.85 – 1.25 aprox
+
+      const totalViews = Math.round(inf.totalViews * factor)
+      const totalConversions = Math.round(inf.totalConversions * (factor * 0.9))
+      const totalRevenue = Math.round(inf.totalRevenue * (factor * 0.95))
+      const engagementRate = Number((inf.engagementRate * (0.9 + factor * 0.1)).toFixed(1))
+      const roi = Number((inf.roi * (0.9 + factor * 0.1)).toFixed(1))
+
+      return {
+        ...inf,
+        totalViews,
+        totalConversions,
+        totalRevenue,
+        engagementRate,
+        totalEngagement: engagementRate,
+        roi,
+      }
+    })
+
+    // Reordenar según score ponderado por un componente pseudoaleatorio
+    // para que el orden cambie entre campañas (incluida María García)
+    const ranked = adjusted
+      .sort((a, b) => {
+        const baseScoreA =
+          a.totalViews * 0.3 +
+          a.engagementRate * 100 +
+          a.totalConversions * 10
+        const baseScoreB =
+          b.totalViews * 0.3 +
+          b.engagementRate * 100 +
+          b.totalConversions * 10
+
+        const randA = Math.abs(Math.sin(seed * 17 + a.id * 13)) // 0..1
+        const randB = Math.abs(Math.sin(seed * 17 + b.id * 13)) // 0..1
+
+        const scoreA = baseScoreA * randA
+        const scoreB = baseScoreB * randB
+
+        return scoreB - scoreA
+      })
+      .map((item, index) => ({
+        ...item,
+        rank: index + 1,
+      }))
+      .slice(0, limit)
+
+    return NextResponse.json({ data: ranked })
   }
 
   try {
 
     // Construir filtros
     interface PostWhere {
+      campaignId?: number
       socialPlatformId?: number
       OR?: Array<{ socialPlatformId: number }>
     }
 
     const postWhere: PostWhere = {}
+
+    // Filtro por campaña
+    if (campaignId) {
+      const cid = parseInt(campaignId)
+      if (!isNaN(cid)) {
+        postWhere.campaignId = cid
+      }
+    }
 
     if (socialPlatformId) {
       const platformIds = socialPlatformId.split(',').map((id) => parseInt(id)).filter(id => !isNaN(id))

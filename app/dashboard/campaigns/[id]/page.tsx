@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { AppSidebar } from '@/components/app-sidebar'
 import { SiteHeader } from '@/components/site-header'
 import { PageBreadcrumb } from '@/components/page-breadcrumb'
@@ -10,14 +10,11 @@ import {
   SidebarProvider,
 } from '@/components/ui/sidebar'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { IconArrowLeft } from '@tabler/icons-react'
 import type { CampaignWithRelations } from '@/shared/types/influencer.types'
 
 export default function CampaignDetailPage() {
   const params = useParams()
-  const router = useRouter()
   const id = Number(params?.id)
 
   const [campaign, setCampaign] = useState<CampaignWithRelations | null>(null)
@@ -150,8 +147,7 @@ export default function CampaignDetailPage() {
                         <div>
                           <p className="text-xs text-[#6B6B8D] mb-1">Influencers asociados</p>
                           <p className="text-sm font-semibold text-[#1A1A2E]">
-                            {campaign._count?.influencerCampaigns ??
-                              dummyInfluencers.length}
+                            {campaign._count?.influencerCampaigns ?? 0}
                           </p>
                         </div>
                       </div>
